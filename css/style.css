@@ -1,64 +1,55 @@
 /* ========================================
-   ملف التنسيقات الرئيسي - موقع الكوميكس
+   Sedbox Comics - تصميم الكوميكس
    ======================================== */
 
-/* ---------- المتغيرات والثيمات ---------- */
+/* ---------- المتغيرات ---------- */
 :root {
-  /* ثيم الداكن (الافتراضي) */
-  --bg-primary: #0f0f1a;
-  --bg-secondary: #1a1a2e;
-  --bg-card: #16213e;
-  --bg-hover: #1f3460;
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a28;
+  --bg-hover: #252538;
   --text-primary: #ffffff;
-  --text-secondary: #b0b0b0;
-  --accent: #e94560;
-  --accent-hover: #ff6b81;
-  --accent2: #0f3460;
-  --accent3: #533483;
-  --border: #2a2a4a;
-  --shadow: rgba(0, 0, 0, 0.4);
-  --overlay: rgba(0, 0, 0, 0.7);
-  --success: #2ecc71;
-  --warning: #f39c12;
-  --danger: #e74c3c;
-  --star: #f1c40f;
-  --gradient1: linear-gradient(135deg, #e94560, #533483);
-  --gradient2: linear-gradient(135deg, #0f3460, #533483);
+  --text-secondary: #a0a0b8;
+  --accent: #ff3366;
+  --accent-hover: #ff5588;
+  --accent2: #00ccff;
+  --accent3: #ffcc00;
+  --accent4: #00ff88;
+  --border: #2a2a40;
+  --shadow: rgba(0, 0, 0, 0.5);
+  --success: #00ff88;
+  --warning: #ffcc00;
+  --danger: #ff3366;
+  --star: #ffcc00;
+  --gradient1: linear-gradient(135deg, #ff3366, #ff6633);
+  --gradient2: linear-gradient(135deg, #00ccff, #0066ff);
+  --gradient3: linear-gradient(135deg, #ff3366, #ffcc00);
   --font-main: 'Tajawal', 'Cairo', sans-serif;
-  --radius: 12px;
-  --radius-sm: 8px;
+  --radius: 16px;
+  --radius-sm: 10px;
   --transition: 0.3s ease;
 }
 
-/* ثيم الفاتح */
 [data-theme="light"] {
-  --bg-primary: #f5f5f5;
+  --bg-primary: #f0f0f5;
   --bg-secondary: #ffffff;
   --bg-card: #ffffff;
-  --bg-hover: #e8e8e8;
-  --text-primary: #1a1a2e;
-  --text-secondary: #666666;
-  --accent: #e94560;
-  --accent-hover: #d63851;
-  --accent2: #1a5276;
-  --accent3: #6c3483;
-  --border: #ddd;
+  --bg-hover: #e8e8f0;
+  --text-primary: #1a1a28;
+  --text-secondary: #666680;
+  --accent: #ff3366;
+  --border: #d0d0e0;
   --shadow: rgba(0, 0, 0, 0.1);
-  --overlay: rgba(255, 255, 255, 0.8);
 }
 
-/* ---------- إعادة تعيين_base ---------- */
-*,
-*::before,
-*::after {
+/* ---------- إعادة تعيين ---------- */
+*, *::before, *::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
   font-family: var(--font-main);
@@ -68,91 +59,77 @@ body {
   line-height: 1.7;
   min-height: 100vh;
   overflow-x: hidden;
-  transition: background-color var(--transition), color var(--transition);
 }
 
-a {
-  text-decoration: none;
-  color: inherit;
-  transition: color var(--transition);
-}
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; height: auto; }
+ul { list-style: none; }
+button { cursor: pointer; border: none; font-family: var(--font-main); }
+input, textarea, select { font-family: var(--font-main); outline: none; }
 
-img {
-  max-width: 100%;
-  height: auto;
-}
-
-ul {
-  list-style: none;
-}
-
-button {
-  cursor: pointer;
-  border: none;
-  outline: none;
-  font-family: var(--font-main);
-}
-
-input,
-textarea,
-select {
-  font-family: var(--font-main);
-  outline: none;
-}
-
-/* ---------- شريط التنقل (Navbar) ---------- */
+/* ---------- شريط التنقل ---------- */
 .navbar {
   position: fixed;
-  top: 0;
-  right: 0;
-  left: 0;
+  top: 0; right: 0; left: 0;
   z-index: 1000;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
+  background: rgba(10, 10, 15, 0.95);
+  backdrop-filter: blur(20px);
   padding: 0 2rem;
-  height: 64px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 2px 20px var(--shadow);
+  border-bottom: 2px solid var(--accent);
 }
 
 .navbar-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 1.5rem;
-  font-weight: 800;
+  gap: 12px;
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.navbar-brand .logo-text {
   background: var(--gradient1);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.navbar-brand svg {
-  width: 32px;
-  height: 32px;
+.navbar-brand .logo-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--gradient1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.2rem;
+  transform: rotate(-5deg);
 }
 
 .navbar-links {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 0.5rem;
 }
 
 .navbar-links a {
   color: var(--text-secondary);
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius-sm);
+  font-weight: 600;
+  padding: 0.6rem 1.2rem;
+  border-radius: 25px;
   transition: all var(--transition);
+  font-size: 0.95rem;
 }
 
 .navbar-links a:hover,
 .navbar-links a.active {
-  color: var(--accent);
-  background: rgba(233, 69, 96, 0.1);
+  color: #fff;
+  background: var(--accent);
 }
 
 .navbar-actions {
@@ -161,44 +138,40 @@ select {
   gap: 0.75rem;
 }
 
-/* شريط البحث في النافبار */
 .search-box {
   position: relative;
-  display: flex;
-  align-items: center;
 }
 
 .search-box input {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
   color: var(--text-primary);
-  padding: 0.5rem 2.5rem 0.5rem 1rem;
+  padding: 0.6rem 2.5rem 0.6rem 1rem;
   border-radius: 25px;
   width: 220px;
-  transition: all var(--transition);
   font-size: 0.9rem;
+  transition: all var(--transition);
 }
 
 .search-box input:focus {
   border-color: var(--accent);
   width: 280px;
-  box-shadow: 0 0 15px rgba(233, 69, 96, 0.2);
 }
 
 .search-box .search-icon {
   position: absolute;
   left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   color: var(--text-secondary);
-  pointer-events: none;
 }
 
-/* زر تبديل الثيم */
 .theme-toggle {
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
   color: var(--text-primary);
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -208,27 +181,24 @@ select {
 }
 
 .theme-toggle:hover {
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: var(--accent3);
+  color: var(--accent3);
   transform: rotate(30deg);
 }
 
-/* قائمة الموبايل */
 .mobile-menu-btn {
   display: none;
   background: none;
   color: var(--text-primary);
   font-size: 1.5rem;
-  padding: 0.5rem;
 }
 
-/* ---------- المحتوى الرئيسي ---------- */
+/* ---------- المحتوى ---------- */
 .main-content {
-  margin-top: 64px;
-  min-height: calc(100vh - 64px);
+  margin-top: 70px;
+  min-height: calc(100vh - 70px);
 }
 
-/* ---------- القسم (Section) ---------- */
 .section {
   padding: 3rem 2rem;
   max-width: 1400px;
@@ -244,51 +214,57 @@ select {
 
 .section-title {
   font-size: 1.8rem;
-  font-weight: 800;
-  position: relative;
-  padding-right: 1rem;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.section-title::before {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 4px;
-  height: 70%;
+.section-title .icon {
+  width: 45px;
+  height: 45px;
   background: var(--gradient1);
-  border-radius: 2px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.1rem;
 }
 
 .section-link {
   color: var(--accent);
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: gap var(--transition);
+  gap: 8px;
 }
 
-.section-link:hover {
-  gap: 0.75rem;
-}
-
-/* ---------- بطل الصفحة (Hero) ---------- */
+/* ---------- البطل (Hero) ---------- */
 .hero {
   position: relative;
-  height: 500px;
+  height: 550px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0a1a2e 100%);
 }
 
-.hero-bg {
+.hero::before {
+  content: '';
   position: absolute;
-  inset: 0;
-  background: var(--gradient2);
-  opacity: 0.6;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,51,102,0.1) 0%, transparent 50%);
+  animation: heroPulse 8s ease-in-out infinite;
+}
+
+@keyframes heroPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.8; }
 }
 
 .hero-content {
@@ -296,14 +272,38 @@ select {
   z-index: 2;
   text-align: center;
   padding: 2rem;
-  max-width: 700px;
+  max-width: 800px;
+}
+
+.hero-badge {
+  display: inline-block;
+  padding: 0.5rem 1.5rem;
+  background: var(--gradient1);
+  border-radius: 30px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 1.5rem;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }
 
 .hero-content h1 {
-  font-size: 3rem;
+  font-size: 3.5rem;
   font-weight: 900;
   margin-bottom: 1rem;
-  text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+  line-height: 1.2;
+}
+
+.hero-content h1 span {
+  background: var(--gradient1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .hero-content p {
@@ -314,30 +314,54 @@ select {
 
 .hero-search {
   display: flex;
-  max-width: 500px;
+  max-width: 550px;
   margin: 0 auto;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .hero-search input {
   flex: 1;
-  padding: 0.9rem 1.5rem;
+  padding: 1rem 1.5rem;
   border-radius: 30px;
   border: 2px solid var(--border);
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-size: 1rem;
-  transition: border-color var(--transition);
 }
 
 .hero-search input:focus {
   border-color: var(--accent);
 }
 
+.hero-stats {
+  display: flex;
+  justify-content: center;
+  gap: 3rem;
+  margin-top: 3rem;
+}
+
+.hero-stat {
+  text-align: center;
+}
+
+.hero-stat .number {
+  font-size: 2rem;
+  font-weight: 900;
+  background: var(--gradient3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-stat .label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
 /* ---------- بطاقات الكوميكس ---------- */
 .comics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1.5rem;
 }
 
@@ -345,16 +369,16 @@ select {
   background: var(--bg-card);
   border-radius: var(--radius);
   overflow: hidden;
-  transition: all var(--transition);
-  border: 1px solid var(--border);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid transparent;
   cursor: pointer;
   position: relative;
 }
 
 .comic-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 30px var(--shadow);
+  transform: translateY(-10px) scale(1.02);
   border-color: var(--accent);
+  box-shadow: 0 20px 40px rgba(255, 51, 102, 0.2);
 }
 
 .comic-card .cover {
@@ -367,23 +391,40 @@ select {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--transition);
+  transition: transform 0.5s ease;
 }
 
 .comic-card:hover .cover img {
-  transform: scale(1.05);
+  transform: scale(1.1);
+}
+
+.comic-card .cover::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(transparent, rgba(0,0,0,0.8));
 }
 
 .comic-card .badge {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 12px;
+  right: 12px;
   background: var(--accent);
   color: #fff;
-  padding: 0.25rem 0.75rem;
+  padding: 0.3rem 0.8rem;
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 700;
+  z-index: 2;
+}
+
+.comic-card .badge.chapter-count {
+  left: 12px;
+  right: auto;
+  background: var(--accent2);
 }
 
 .comic-card .card-info {
@@ -391,7 +432,7 @@ select {
 }
 
 .comic-card .card-title {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
   display: -webkit-box;
@@ -413,6 +454,7 @@ select {
   align-items: center;
   gap: 4px;
   color: var(--star);
+  font-weight: 600;
 }
 
 .comic-card .card-views {
@@ -431,15 +473,15 @@ select {
 }
 
 .category-chip {
-  padding: 0.5rem 1.25rem;
-  border-radius: 25px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  padding: 0.6rem 1.5rem;
+  border-radius: 30px;
+  background: var(--bg-card);
+  border: 2px solid var(--border);
   color: var(--text-secondary);
   font-size: 0.9rem;
-  font-weight: 500;
-  transition: all var(--transition);
+  font-weight: 600;
   cursor: pointer;
+  transition: all var(--transition);
 }
 
 .category-chip:hover,
@@ -447,13 +489,14 @@ select {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+  transform: scale(1.05);
 }
 
 /* ---------- صفحة التفاصيل ---------- */
 .comic-detail {
   display: grid;
-  grid-template-columns: 350px 1fr;
-  gap: 2rem;
+  grid-template-columns: 380px 1fr;
+  gap: 3rem;
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
@@ -461,19 +504,20 @@ select {
 
 .comic-detail .cover-section {
   position: sticky;
-  top: 84px;
+  top: 90px;
   align-self: start;
 }
 
 .comic-detail .cover-section img {
   width: 100%;
   border-radius: var(--radius);
-  box-shadow: 0 10px 30px var(--shadow);
+  box-shadow: 0 20px 50px var(--shadow);
+  border: 3px solid var(--accent);
 }
 
 .comic-detail .info-section h1 {
-  font-size: 2rem;
-  font-weight: 800;
+  font-size: 2.2rem;
+  font-weight: 900;
   margin-bottom: 1rem;
 }
 
@@ -481,31 +525,24 @@ select {
   display: flex;
   align-items: center;
   gap: 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
 }
 
 .comic-detail .meta-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 8px;
   color: var(--text-secondary);
-}
-
-.comic-detail .rating-display {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.comic-detail .stars {
-  color: var(--star);
-  font-size: 1.2rem;
+  padding: 0.5rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  font-size: 0.9rem;
 }
 
 .comic-detail .description {
   color: var(--text-secondary);
-  line-height: 1.8;
+  line-height: 1.9;
   margin: 1.5rem 0;
   font-size: 1.05rem;
 }
@@ -513,18 +550,18 @@ select {
 .comic-detail .action-buttons {
   display: flex;
   gap: 1rem;
-  margin: 1.5rem 0;
+  margin: 2rem 0;
   flex-wrap: wrap;
 }
 
-/* ---------- أزرار ---------- */
+/* ---------- الأزرار ---------- */
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.75rem;
-  border-radius: 25px;
-  font-weight: 600;
+  gap: 8px;
+  padding: 0.8rem 2rem;
+  border-radius: 30px;
+  font-weight: 700;
   font-size: 1rem;
   transition: all var(--transition);
 }
@@ -535,14 +572,14 @@ select {
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 20px rgba(233, 69, 96, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 30px rgba(255, 51, 102, 0.4);
 }
 
 .btn-secondary {
   background: var(--bg-secondary);
   color: var(--text-primary);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
 }
 
 .btn-secondary:hover {
@@ -552,7 +589,7 @@ select {
 
 .btn-success {
   background: var(--success);
-  color: #fff;
+  color: #000;
 }
 
 .btn-danger {
@@ -565,7 +602,7 @@ select {
   font-size: 0.85rem;
 }
 
-/* ---------- قائمة الفصول ---------- */
+/* ---------- الفصول ---------- */
 .chapters-list {
   margin-top: 2rem;
 }
@@ -574,9 +611,9 @@ select {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
+  padding: 1.2rem 1.5rem;
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius-sm);
   margin-bottom: 0.75rem;
   transition: all var(--transition);
@@ -586,11 +623,11 @@ select {
 .chapter-item:hover {
   border-color: var(--accent);
   background: var(--bg-hover);
-  transform: translateX(-5px);
+  transform: translateX(-8px);
 }
 
 .chapter-item .chapter-title {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .chapter-item .chapter-meta {
@@ -598,7 +635,7 @@ select {
   font-size: 0.85rem;
 }
 
-/* ---------- قارئ الكوميكس ---------- */
+/* ---------- القارئ ---------- */
 .reader-container {
   position: fixed;
   inset: 0;
@@ -612,14 +649,15 @@ select {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.5rem;
-  background: rgba(0, 0, 0, 0.9);
+  padding: 0.8rem 1.5rem;
+  background: rgba(0, 0, 0, 0.95);
   color: #fff;
   z-index: 10;
+  border-bottom: 2px solid var(--accent);
 }
 
 .reader-header .reader-title {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .reader-controls {
@@ -631,13 +669,12 @@ select {
 .reader-controls button {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background var(--transition);
 }
 
 .reader-controls button:hover {
@@ -654,15 +691,14 @@ select {
   gap: 0.5rem;
 }
 
+.reader-body img {
+  max-width: 100%;
+  transition: transform 0.3s ease;
+}
+
 .reader-body.page-mode {
   overflow: hidden;
   position: relative;
-}
-
-.reader-body img {
-  max-width: 100%;
-  max-height: none;
-  transition: transform 0.3s ease;
 }
 
 .reader-body.page-mode img {
@@ -670,7 +706,6 @@ select {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  max-width: 100%;
   max-height: 100%;
   object-fit: contain;
 }
@@ -680,29 +715,30 @@ select {
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  padding: 0.75rem;
-  background: rgba(0, 0, 0, 0.9);
+  padding: 0.8rem;
+  background: rgba(0, 0, 0, 0.95);
   color: #fff;
+  border-top: 2px solid var(--accent);
 }
 
 .reader-footer select {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.4rem 0.8rem;
+  padding: 0.5rem 1rem;
   border-radius: var(--radius-sm);
 }
 
-/* ---------- لوحة التحكم (Admin) ---------- */
+/* ---------- لوحة التحكم ---------- */
 .admin-layout {
   display: grid;
   grid-template-columns: 260px 1fr;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 70px);
 }
 
 .admin-sidebar {
   background: var(--bg-secondary);
-  border-left: 1px solid var(--border);
+  border-left: 2px solid var(--border);
   padding: 2rem 0;
 }
 
@@ -714,10 +750,10 @@ select {
 .admin-sidebar .menu-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.9rem 1.5rem;
+  gap: 12px;
+  padding: 1rem 1.5rem;
   color: var(--text-secondary);
-  font-weight: 500;
+  font-weight: 600;
   transition: all var(--transition);
   cursor: pointer;
 }
@@ -725,8 +761,8 @@ select {
 .admin-sidebar .menu-item:hover,
 .admin-sidebar .menu-item.active {
   color: var(--accent);
-  background: rgba(233, 69, 96, 0.1);
-  border-right: 3px solid var(--accent);
+  background: rgba(255, 51, 102, 0.1);
+  border-right: 4px solid var(--accent);
 }
 
 .admin-main {
@@ -736,7 +772,7 @@ select {
 
 .admin-stat-card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius);
   padding: 1.5rem;
   text-align: center;
@@ -744,13 +780,13 @@ select {
 }
 
 .admin-stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px var(--shadow);
+  transform: translateY(-5px);
+  border-color: var(--accent);
 }
 
 .admin-stat-card .stat-number {
   font-size: 2.5rem;
-  font-weight: 800;
+  font-weight: 900;
   background: var(--gradient1);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -769,10 +805,10 @@ select {
   margin-bottom: 2rem;
 }
 
-/* ---------- نموذج الإدارة ---------- */
+/* ---------- النموذج ---------- */
 .admin-form {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius);
   padding: 2rem;
   max-width: 800px;
@@ -784,22 +820,20 @@ select {
 
 .form-group label {
   display: block;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 0.5rem;
-  color: var(--text-primary);
 }
 
 .form-group input,
 .form-group textarea,
 .form-group select {
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.8rem 1.2rem;
   background: var(--bg-primary);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   font-size: 1rem;
-  transition: border-color var(--transition);
 }
 
 .form-group input:focus,
@@ -813,43 +847,32 @@ select {
   min-height: 120px;
 }
 
-/* منطقة سحب وإفلات */
+/* منطقة السحب */
 .drop-zone {
-  border: 2px dashed var(--border);
+  border: 3px dashed var(--border);
   border-radius: var(--radius);
   padding: 3rem 2rem;
   text-align: center;
-  transition: all var(--transition);
   cursor: pointer;
   background: var(--bg-primary);
+  transition: all var(--transition);
 }
 
 .drop-zone:hover,
 .drop-zone.dragover {
   border-color: var(--accent);
-  background: rgba(233, 69, 96, 0.05);
+  background: rgba(255, 51, 102, 0.05);
 }
 
 .drop-zone .drop-icon {
   font-size: 3rem;
-  color: var(--text-secondary);
+  color: var(--accent);
   margin-bottom: 1rem;
 }
 
-.drop-zone p {
-  color: var(--text-secondary);
-}
-
-.drop-zone .browse-btn {
-  color: var(--accent);
-  font-weight: 600;
-  cursor: pointer;
-}
-
-/* معاينة الصور المرفوعة */
 .upload-preview {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 0.75rem;
   margin-top: 1rem;
 }
@@ -884,29 +907,28 @@ select {
   cursor: pointer;
 }
 
-/* ---------- صفحة تسجيل الدخول ---------- */
+/* ---------- تسجيل الدخول ---------- */
 .login-page {
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 70px);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 100%);
 }
 
 .login-card {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 2px solid var(--accent);
   border-radius: var(--radius);
   padding: 3rem;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 10px 40px var(--shadow);
 }
 
 .login-card h2 {
   text-align: center;
-  font-size: 1.8rem;
-  font-weight: 800;
+  font-size: 2rem;
+  font-weight: 900;
   margin-bottom: 0.5rem;
 }
 
@@ -916,14 +938,10 @@ select {
   margin-bottom: 2rem;
 }
 
-.login-card .form-group {
-  margin-bottom: 1.25rem;
-}
-
 .login-card .btn {
   width: 100%;
   justify-content: center;
-  padding: 0.9rem;
+  padding: 1rem;
   font-size: 1.1rem;
 }
 
@@ -934,7 +952,7 @@ select {
   background: var(--bg-card);
   border-radius: var(--radius);
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
 }
 
 .admin-table th,
@@ -947,24 +965,17 @@ select {
 .admin-table th {
   background: var(--bg-secondary);
   font-weight: 700;
-  color: var(--text-secondary);
-  font-size: 0.85rem;
-  text-transform: uppercase;
+  color: var(--accent);
 }
 
 .admin-table tr:hover td {
   background: var(--bg-hover);
 }
 
-.admin-table .actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-/* ---------- Footer ---------- */
+/* ---------- الفوتر ---------- */
 .footer {
   background: var(--bg-secondary);
-  border-top: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
   padding: 3rem 2rem 1.5rem;
   margin-top: 3rem;
 }
@@ -981,7 +992,6 @@ select {
   font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  color: var(--text-primary);
 }
 
 .footer-section a {
@@ -1001,19 +1011,17 @@ select {
   margin-top: 2rem;
   border-top: 1px solid var(--border);
   color: var(--text-secondary);
-  font-size: 0.9rem;
 }
 
-/* ---------- النافذة المنبثقة (Modal) ---------- */
+/* ---------- النافذة المنبثقة ---------- */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: var(--overlay);
+  background: rgba(0, 0, 0, 0.8);
   z-index: 3000;
   display: none;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
 }
 
 .modal-overlay.show {
@@ -1022,70 +1030,17 @@ select {
 
 .modal {
   background: var(--bg-card);
-  border: 1px solid var(--border);
+  border: 2px solid var(--accent);
   border-radius: var(--radius);
   padding: 2rem;
   max-width: 500px;
-  width: 100%;
-  box-shadow: 0 20px 50px var(--shadow);
+  width: 90%;
   animation: modalIn 0.3s ease;
 }
 
 @keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-
-.modal-header h3 {
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.modal-close {
-  background: none;
-  color: var(--text-secondary);
-  font-size: 1.5rem;
-  transition: color var(--transition);
-}
-
-.modal-close:hover {
-  color: var(--danger);
-}
-
-/* ---------- شاشة التحميل ---------- */
-.loader {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* ---------- التنبيهات ---------- */
@@ -1093,28 +1048,34 @@ select {
   padding: 1rem 1.5rem;
   border-radius: var(--radius-sm);
   margin-bottom: 1rem;
-  font-weight: 500;
+  font-weight: 600;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .alert-success {
-  background: rgba(46, 204, 113, 0.15);
+  background: rgba(0, 255, 136, 0.15);
   color: var(--success);
-  border: 1px solid rgba(46, 204, 113, 0.3);
+  border: 1px solid var(--success);
 }
 
 .alert-danger {
-  background: rgba(231, 76, 60, 0.15);
+  background: rgba(255, 51, 102, 0.15);
   color: var(--danger);
-  border: 1px solid rgba(231, 76, 60, 0.3);
+  border: 1px solid var(--danger);
 }
 
 .alert-warning {
-  background: rgba(243, 156, 18, 0.15);
+  background: rgba(255, 204, 0, 0.15);
   color: var(--warning);
-  border: 1px solid rgba(243, 156, 18, 0.3);
+  border: 1px solid var(--warning);
 }
 
-/* ---------- فارغ (Empty State) ---------- */
+/* ---------- الفارغ ---------- */
 .empty-state {
   text-align: center;
   padding: 4rem 2rem;
@@ -1127,37 +1088,40 @@ select {
   opacity: 0.5;
 }
 
-.empty-state h3 {
-  font-size: 1.3rem;
-  margin-bottom: 0.5rem;
+/* ---------- التقييم ---------- */
+.star-rating {
+  display: flex;
+  gap: 6px;
+  direction: ltr;
 }
 
-/* ---------- صفحة البحث ---------- */
-.search-results-info {
-  padding: 1rem 0;
-  color: var(--text-secondary);
-  font-size: 1.1rem;
+.star-rating .star {
+  font-size: 1.5rem;
+  color: var(--border);
+  cursor: pointer;
 }
 
-/* ---------- Pagination ---------- */
+.star-rating .star.filled {
+  color: var(--star);
+}
+
+/* ---------- الترقيم ---------- */
 .pagination {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   margin-top: 2rem;
-  padding: 1rem;
 }
 
 .pagination button {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  background: var(--bg-card);
+  border: 2px solid var(--border);
   color: var(--text-primary);
-  font-weight: 600;
-  transition: all var(--transition);
+  font-weight: 700;
 }
 
 .pagination button:hover,
@@ -1167,26 +1131,25 @@ select {
   border-color: var(--accent);
 }
 
-/* ---------- التقييم بالنجوم ---------- */
-.star-rating {
+/* ---------- التحميل ---------- */
+.loader {
   display: flex;
-  gap: 4px;
-  direction: ltr;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
 }
 
-.star-rating .star {
-  font-size: 1.5rem;
-  color: var(--border);
-  cursor: pointer;
-  transition: color var(--transition);
+.spinner {
+  width: 45px;
+  height: 45px;
+  border: 4px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.star-rating .star.filled {
-  color: var(--star);
-}
-
-.star-rating .star:hover {
-  color: var(--star);
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* ---------- أنيميشنات ---------- */
@@ -1195,14 +1158,8 @@ select {
 }
 
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .slide-in {
@@ -1210,14 +1167,8 @@ select {
 }
 
 @keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 /* ---------- المتجاوب ---------- */
@@ -1225,23 +1176,11 @@ select {
   .comic-detail {
     grid-template-columns: 280px 1fr;
   }
-  
   .admin-layout {
     grid-template-columns: 1fr;
   }
-  
   .admin-sidebar {
     display: none;
-  }
-  
-  .admin-sidebar.show {
-    display: block;
-    position: fixed;
-    top: 64px;
-    right: 0;
-    bottom: 0;
-    width: 260px;
-    z-index: 1500;
   }
 }
 
@@ -1249,127 +1188,81 @@ select {
   .navbar {
     padding: 0 1rem;
   }
-  
   .navbar-links {
     display: none;
     position: fixed;
-    top: 64px;
-    right: 0;
-    left: 0;
+    top: 70px;
+    right: 0; left: 0;
     background: var(--bg-secondary);
     flex-direction: column;
     padding: 1rem;
-    border-bottom: 1px solid var(--border);
-    box-shadow: 0 10px 30px var(--shadow);
+    border-bottom: 2px solid var(--accent);
   }
-  
   .navbar-links.show {
     display: flex;
   }
-  
   .mobile-menu-btn {
     display: block;
   }
-  
   .search-box input {
     width: 150px;
   }
-  
-  .search-box input:focus {
-    width: 200px;
-  }
-  
   .hero {
-    height: 400px;
+    height: 450px;
   }
-  
   .hero-content h1 {
     font-size: 2rem;
   }
-  
+  .hero-stats {
+    gap: 1.5rem;
+  }
+  .hero-stat .number {
+    font-size: 1.5rem;
+  }
   .section {
     padding: 2rem 1rem;
   }
-  
   .comics-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
   }
-  
   .comic-detail {
     grid-template-columns: 1fr;
     padding: 1rem;
   }
-  
   .comic-detail .cover-section {
     position: static;
     max-width: 300px;
     margin: 0 auto;
   }
-  
   .section-title {
-    font-size: 1.4rem;
+    font-size: 1.3rem;
   }
 }
 
 @media (max-width: 480px) {
-  .comics-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-  }
-  
-  .hero-content h1 {
-    font-size: 1.6rem;
-  }
-  
   .hero-search {
     flex-direction: column;
   }
-  
   .categories-bar {
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: 0.5rem;
   }
-  
   .category-chip {
     white-space: nowrap;
     flex-shrink: 0;
   }
-  
   .action-buttons {
     flex-direction: column;
   }
-  
   .btn {
     justify-content: center;
   }
 }
 
-/* ---------- التمرير المخصص ---------- */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-primary);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
-}
-
-/* ---------- اخت print ---------- */
-@media print {
-  .navbar,
-  .footer,
-  .reader-header,
-  .reader-footer {
-    display: none !important;
-  }
-}
+/* ---------- التمرير ---------- */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
