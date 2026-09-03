@@ -9,6 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <nav class="navbar">
@@ -122,22 +126,25 @@
   <script>
     if (!DB.isAdmin()) window.location.href = 'login.html';
 
-    document.addEventListener('DOMContentLoaded', function() {
-      loadCategories();
-      loadComics();
+    document.addEventListener('DOMContentLoaded', async function() {
+      // تهيئة Firebase
+      await DB.init();
+      
+      await loadCategories();
+      await loadComics();
       UI.loadTheme();
     });
 
-    function loadCategories() {
-      const categories = DB.getCategories();
+    async function loadCategories() {
+      const categories = await DB.getCategories();
       const select = document.getElementById('comicCategory');
       select.innerHTML = categories.map(c => 
         `<option value="${c.name}">${c.name}</option>`
       ).join('');
     }
 
-    function loadComics() {
-      const comics = DB.getComics();
+    async function loadComics() {
+      const comics = await DB.getComics();
       
       if (comics.length === 0) {
         document.getElementById('comicsTable').innerHTML = `
@@ -202,7 +209,7 @@
       `;
     }
 
-    function showAddForm() {
+    async function showAddForm() {
       document.getElementById('comicForm').style.display = 'block';
       document.getElementById('formTitle').innerHTML = '<i class="fas fa-plus-circle" style="color: var(--accent);"></i> إضافة كوميكس جديد';
       document.getElementById('editId').value = '';
@@ -218,7 +225,7 @@
       document.getElementById('comicForm').style.display = 'none';
     }
 
-    function saveComic(e) {
+    async function saveComic(e) {
       e.preventDefault();
       const editId = document.getElementById('editId').value;
       const data = {
@@ -230,19 +237,19 @@
       };
 
       if (editId) {
-        DB.updateComic(parseInt(editId), data);
+        await DB.updateComic(parseInt(editId), data);
         showAlert('تم تحديث الكوميكس بنجاح!', 'success');
       } else {
-        DB.addComic(data);
+        await DB.addComic(data);
         showAlert('تم إضافة الكوميكس بنجاح!', 'success');
       }
 
       hideForm();
-      loadComics();
+      await loadComics();
     }
 
-    function editComic(id) {
-      const comic = DB.getComic(id);
+    async function editComic(id) {
+      const comic = await DB.getComic(id);
       if (!comic) return;
 
       document.getElementById('editId').value = id;
@@ -262,11 +269,11 @@
       document.getElementById('comicForm').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function deleteComic(id) {
+    async function deleteComic(id) {
       if (confirm('هل أنت متأكد من حذف هذا الكوميكس؟ سيتم حذف جميع الفصول المرتبطة أيضاً.')) {
-        DB.deleteComic(id);
+        await DB.deleteComic(id);
         showAlert('تم حذف الكوميكس بنجاح.', 'danger');
-        loadComics();
+        await loadComics();
       }
     }
 

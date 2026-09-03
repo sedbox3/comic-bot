@@ -43,8 +43,9 @@ const UI = {
   },
 
   // ---------- إنشاء الفوتر ----------
-  renderFooter() {
-    const categories = DB.getCategories().slice(0, 6);
+  async renderFooter() {
+    const categories = await DB.getCategories();
+    const cats = categories.slice(0, 6);
     return `
     <footer class="footer">
       <div class="footer-content">
@@ -63,7 +64,7 @@ const UI = {
         </div>
         <div class="footer-section">
           <h3>التصنيفات</h3>
-          ${categories.map(c => `<a href="browse.html?category=${c.name}">${c.name}</a>`).join('')}
+          ${cats.map(c => `<a href="browse.html?category=${c.name}">${c.name}</a>`).join('')}
         </div>
         <div class="footer-section">
           <h3>تابعنا</h3>
@@ -79,14 +80,13 @@ const UI = {
   },
 
   // ---------- إنشاء بطاقة كوميكس ----------
-  renderComicCard(comic) {
-    const chapters = DB.getChapters(comic.id);
+  renderComicCard(comic, chaptersCount = 0) {
     return `
     <div class="comic-card fade-in" onclick="window.location.href='comic.html?id=${comic.id}'">
       <div class="cover">
         <img src="${comic.cover}" alt="${comic.title}" loading="lazy">
         ${comic.status === 'draft' ? '<span class="badge">مسودة</span>' : ''}
-        ${chapters.length > 0 ? `<span class="badge" style="left:10px;right:auto;background:var(--accent2)">${chapters.length} فصل</span>` : ''}
+        ${chaptersCount > 0 ? `<span class="badge" style="left:10px;right:auto;background:var(--accent2)">${chaptersCount} فصل</span>` : ''}
       </div>
       <div class="card-info">
         <h3 class="card-title">${comic.title}</h3>
@@ -103,7 +103,7 @@ const UI = {
   },
 
   // ---------- إنشاء شبكة الكوميكس ----------
-  renderComicsGrid(comics) {
+  async renderComicsGrid(comics) {
     if (comics.length === 0) {
       return `
       <div class="empty-state">
@@ -112,15 +112,22 @@ const UI = {
         <p>لم يتم العثور على كوميكس مطابقة.</p>
       </div>`;
     }
+    
+    const allChapters = await DB.getData('chapters') || [];
+    const chaptersList = Array.isArray(allChapters) ? allChapters : Object.values(allChapters);
+    
     return `
     <div class="comics-grid">
-      ${comics.map(c => this.renderComicCard(c)).join('')}
+      ${comics.map(c => {
+        const count = chaptersList.filter(ch => ch.comicId === c.id).length;
+        return this.renderComicCard(c, count);
+      }).join('')}
     </div>`;
   },
 
   // ---------- إنشاء قائمة التصنيفات ----------
-  renderCategoriesBar(selectedCategory = '') {
-    const categories = DB.getCategories();
+  async renderCategoriesBar(selectedCategory = '') {
+    const categories = await DB.getCategories();
     return `
     <div class="categories-bar">
       <button class="category-chip ${!selectedCategory ? 'active' : ''}" 
@@ -138,11 +145,10 @@ const UI = {
 
   // ---------- إنشاء تقييم النجوم ----------
   renderStarRating(comicId, currentRating = 0) {
-    const userRating = DB.getUserRating(comicId);
     return `
     <div class="star-rating" data-comic-id="${comicId}">
       ${[1, 2, 3, 4, 5].map(star => `
-        <span class="star ${star <= (userRating || currentRating) ? 'filled' : ''}" 
+        <span class="star ${star <= currentRating ? 'filled' : ''}" 
               onclick="UI.rateComic(${comicId}, ${star})" 
               onmouseover="UI.previewRating(this, ${star})"
               onmouseout="UI.resetRatingPreview(this)">
@@ -153,8 +159,8 @@ const UI = {
   },
 
   // ---------- تقييم الكوميكس ----------
-  rateComic(comicId, rating) {
-    DB.rateComic(comicId, rating);
+  async rateComic(comicId, rating) {
+    await DB.rateComic(comicId, rating);
     this.showAlert('تم تسجيل تقييمك بنجاح!', 'success');
     // تحديث النجوم
     const container = document.querySelector(`.star-rating[data-comic-id="${comicId}"]`);

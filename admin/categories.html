@@ -9,6 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <nav class="navbar">
@@ -77,14 +81,17 @@
   <script>
     if (!DB.isAdmin()) window.location.href = 'login.html';
 
-    document.addEventListener('DOMContentLoaded', function() {
-      loadCategories();
+    document.addEventListener('DOMContentLoaded', async function() {
+      // تهيئة Firebase
+      await DB.init();
+      
+      await loadCategories();
       UI.loadTheme();
     });
 
-    function loadCategories() {
-      const categories = DB.getCategories();
-      const comics = DB.getComics();
+    async function loadCategories() {
+      const categories = await DB.getCategories();
+      const comics = await DB.getComics();
 
       if (categories.length === 0) {
         document.getElementById('categoriesList').innerHTML = `
@@ -132,38 +139,38 @@
       `;
     }
 
-    function addCategory(e) {
+    async function addCategory(e) {
       e.preventDefault();
       const name = document.getElementById('categoryName').value.trim();
       
       if (!name) return;
 
       // التحقق من عدم التكرار
-      const existing = DB.getCategories().find(c => c.name === name);
-      if (existing) {
+      const existing = await DB.getCategories();
+      if (existing.find(c => c.name === name)) {
         UI.showAlert('هذا التصنيف موجود بالفعل!', 'warning');
         return;
       }
 
       const slug = name.toLowerCase().replace(/\s+/g, '-');
-      DB.addCategory({ name, slug });
+      await DB.addCategory({ name, slug });
       
       document.getElementById('categoryName').value = '';
       UI.showAlert('تم إضافة التصنيف بنجاح!', 'success');
-      loadCategories();
+      await loadCategories();
     }
 
-    function deleteCategory(id, name) {
-      const comics = DB.getComicsByCategory(name);
+    async function deleteCategory(id, name) {
+      const comics = await DB.getComicsByCategory(name);
       if (comics.length > 0) {
         UI.showAlert(`لا يمكن حذف التصنيف "${name}" لأنه يحتوي على ${comics.length} كوميكس.`, 'warning');
         return;
       }
       
       if (confirm(`هل أنت متأكد من حذف التصنيف "${name}"؟`)) {
-        DB.deleteCategory(id);
+        await DB.deleteCategory(id);
         UI.showAlert('تم حذف التصنيف بنجاح.', 'danger');
-        loadCategories();
+        await loadCategories();
       }
     }
 

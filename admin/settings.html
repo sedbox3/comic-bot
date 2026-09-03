@@ -9,6 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <nav class="navbar">
@@ -139,54 +143,56 @@
   <script>
     if (!DB.isAdmin()) window.location.href = 'login.html';
 
-    document.addEventListener('DOMContentLoaded', function() {
-      const settings = DB.load(DB.KEYS.SETTINGS) || {};
+    document.addEventListener('DOMContentLoaded', async function() {
+      // تهيئة Firebase
+      await DB.init();
+      
+      const settings = await DB.getSettings();
       document.getElementById('siteName').value = settings.siteName || '';
       document.getElementById('siteDesc').value = settings.siteDescription || '';
       document.getElementById('itemsPerPage').value = settings.itemsPerPage || 20;
       UI.loadTheme();
     });
 
-    function saveSettings(e) {
+    async function saveSettings(e) {
       e.preventDefault();
-      const settings = DB.load(DB.KEYS.SETTINGS) || {};
+      const settings = await DB.getSettings();
       settings.siteName = document.getElementById('siteName').value.trim();
       settings.siteDescription = document.getElementById('siteDesc').value.trim();
       settings.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
-      DB.save(DB.KEYS.SETTINGS, settings);
+      await DB.saveSettings(settings);
       UI.showAlert('تم حفظ الإعدادات بنجاح!', 'success');
     }
 
-    function changePassword(e) {
+    async function changePassword(e) {
       e.preventDefault();
       const current = document.getElementById('currentPass').value;
       const newPass = document.getElementById('newPass').value;
       const confirm = document.getElementById('confirmPass').value;
-
-      const admin = DB.load(DB.KEYS.ADMIN);
-      if (admin.password !== btoa(current)) {
-        UI.showAlert('كلمة المرور الحالية غير صحيحة!', 'danger');
-        return;
-      }
 
       if (newPass !== confirm) {
         UI.showAlert('كلمتا المرور الجديدتان غير متطابقتين!', 'warning');
         return;
       }
 
-      admin.password = btoa(newPass);
-      DB.save(DB.KEYS.ADMIN, admin);
-      document.getElementById('currentPass').value = '';
-      document.getElementById('newPass').value = '';
-      document.getElementById('confirmPass').value = '';
-      UI.showAlert('تم تغيير كلمة المرور بنجاح!', 'success');
+      const result = await DB.changePassword(current, newPass);
+      if (result.success) {
+        document.getElementById('currentPass').value = '';
+        document.getElementById('newPass').value = '';
+        document.getElementById('confirmPass').value = '';
+        UI.showAlert(result.message, 'success');
+      } else {
+        UI.showAlert(result.message, 'danger');
+      }
     }
 
-    function exportData() {
-      const data = {};
-      Object.values(DB.KEYS).forEach(key => {
-        data[key] = DB.load(key);
-      });
+    async function exportData() {
+      const data = {
+        comics: await DB.getComics(),
+        chapters: await DB.getData('chapters'),
+        categories: await DB.getCategories(),
+        settings: await DB.getSettings()
+      };
       
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -198,16 +204,17 @@
       UI.showAlert('تم تصدير البيانات بنجاح!', 'success');
     }
 
-    function importData(file) {
+    async function importData(file) {
       if (!file) return;
       
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const data = JSON.parse(e.target.result);
-          Object.entries(data).forEach(([key, value]) => {
-            if (value) DB.save(key, value);
-          });
+          if (data.comics) await DB.setData('comics', data.comics);
+          if (data.chapters) await DB.setData('chapters', data.chapters);
+          if (data.categories) await DB.setData('categories', data.categories);
+          if (data.settings) await DB.setData('settings', data.settings);
           UI.showAlert('تم استيراد البيانات بنجاح! يتم إعادة تحميل الصفحة...', 'success');
           setTimeout(() => location.reload(), 1500);
         } catch (err) {
@@ -217,13 +224,12 @@
       reader.readAsText(file);
     }
 
-    function resetData() {
+    async function resetData() {
       if (confirm('هل أنت متأكد من إعادة تعيين جميع البيانات؟ سيتم حذف جميع الكوميكس والفصول المضافة.')) {
         if (confirm('تأكيد نهائي: سيتم حذف جميع البيانات المخصصة!')) {
-          Object.values(DB.KEYS).forEach(key => {
-            if (key !== DB.KEYS.ADMIN) DB.remove(key);
-          });
-          DB.init();
+          await DB.setData('comics', []);
+          await DB.setData('chapters', []);
+          await DB.init();
           UI.showAlert('تم إعادة تعيين البيانات! يتم إعادة تحميل الصفحة...', 'success');
           setTimeout(() => location.reload(), 1500);
         }

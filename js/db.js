@@ -1,26 +1,30 @@
 /* ========================================
    خدمة البيانات - موقع الكوميكس
-   إدارة البيانات باستخدام localStorage
+   إدارة البيانات باستخدام Firebase
    ======================================== */
 
-const DB = {
-  // ---------- المفتاح الأساسي للتخزين ----------
-  KEYS: {
-    COMICS: 'comicx_comics',
-    CHAPTERS: 'comicx_chapters',
-    CATEGORIES: 'comicx_categories',
-    SETTINGS: 'comicx_settings',
-    ADMIN: 'comicx_admin',
-    RATINGS: 'comicx_ratings',
-    VIEWS: 'comicx_views',
-    READING_POS: 'comicx_reading_pos'
-  },
+// ---------- إعداد Firebase ----------
+const firebaseConfig = {
+  apiKey: "AIzaSyCpJiHhsyLQ8Dngj9gq8jbgDrwqxx41qzc",
+  authDomain: "comicx-arabic.firebaseapp.com",
+  databaseURL: "https://comicx-arabic-default-rtdb.firebaseio.com",
+  projectId: "comicx-arabic",
+  storageBucket: "comicx-arabic.firebasestorage.app",
+  messagingSenderId: "199234060570",
+  appId: "1:199234060570:web:9a328a93dec1ad34a2eca3"
+};
 
+// تهيئة Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const DB = {
   // ---------- تهيئة قاعدة البيانات ----------
-  init() {
-    // إنشاء بيانات افتراضية إذا لم تكن موجودة
-    if (!localStorage.getItem(this.KEYS.CATEGORIES)) {
-      this.save(this.KEYS.CATEGORIES, [
+  async init() {
+    // إنشاء التصنيفات الافتراضية إذا لم تكن موجودة
+    const categoriesSnap = await db.ref('categories').once('value');
+    if (!categoriesSnap.exists()) {
+      await db.ref('categories').set([
         { id: 1, name: 'أكشن', slug: 'action' },
         { id: 2, name: 'مغامرة', slug: 'adventure' },
         { id: 3, name: 'خيال علمي', slug: 'sci-fi' },
@@ -35,17 +39,18 @@ const DB = {
     }
 
     // بيانات الأدمن الافتراضية
-    if (!localStorage.getItem(this.KEYS.ADMIN)) {
-      this.save(this.KEYS.ADMIN, {
+    const adminSnap = await db.ref('admin').once('value');
+    if (!adminSnap.exists()) {
+      await db.ref('admin').set({
         username: 'admin',
-        // كلمة المرور: admin123 مشفرة بـ btoa
         password: btoa('admin123')
       });
     }
 
     // إعدادات الافتراضية
-    if (!localStorage.getItem(this.KEYS.SETTINGS)) {
-      this.save(this.KEYS.SETTINGS, {
+    const settingsSnap = await db.ref('settings').once('value');
+    if (!settingsSnap.exists()) {
+      await db.ref('settings').set({
         siteName: 'كوميكس عربية',
         siteDescription: 'أكبر مكتبة كوميكس عربية',
         theme: 'dark',
@@ -54,130 +59,140 @@ const DB = {
     }
 
     // إنشاء مصفوفات فارغة إذا لم تكن موجودة
-    if (!localStorage.getItem(this.KEYS.COMICS)) {
-      this.save(this.KEYS.COMICS, []);
+    const comicsSnap = await db.ref('comics').once('value');
+    if (!comicsSnap.exists()) {
+      await db.ref('comics').set([]);
     }
 
-    if (!localStorage.getItem(this.KEYS.CHAPTERS)) {
-      this.save(this.KEYS.CHAPTERS, []);
+    const chaptersSnap = await db.ref('chapters').once('value');
+    if (!chaptersSnap.exists()) {
+      await db.ref('chapters').set([]);
     }
   },
 
-  // ----------عمليات CRUD الأساسية ----------
-  save(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
+  // ---------- عمليات القراءة ----------
+  async getData(path) {
+    const snapshot = await db.ref(path).once('value');
+    return snapshot.val();
   },
 
-  load(key) {
-    const data = localStorage.getItem(key);
-    return data ? JSON.parse(data) : null;
+  async setData(path, data) {
+    await db.ref(path).set(data);
   },
 
-  remove(key) {
-    localStorage.removeItem(key);
+  async updateData(path, data) {
+    await db.ref(path).update(data);
+  },
+
+  async removeData(path) {
+    await db.ref(path).remove();
   },
 
   // ---------- إدارة الكوميكس ----------
-  getComics() {
-    return this.load(this.KEYS.COMICS) || [];
+  async getComics() {
+    const data = await this.getData('comics');
+    return data ? Object.values(data) : [];
   },
 
-  getComic(id) {
-    const comics = this.getComics();
-    return comics.find(c => c.id === id);
+  async getComic(id) {
+    const snapshot = await db.ref('comics/' + id).once('value');
+    return snapshot.val();
   },
 
-  addComic(comic) {
-    const comics = this.getComics();
+  async addComic(comic) {
+    const comics = await this.getComics();
     comic.id = Date.now();
     comic.createdAt = new Date().toISOString();
     comic.views = 0;
     comic.rating = 0;
     comic.ratingCount = 0;
     comics.unshift(comic);
-    this.save(this.KEYS.COMICS, comics);
+    await this.setData('comics', comics);
     return comic;
   },
 
-  updateComic(id, updates) {
-    const comics = this.getComics();
+  async updateComic(id, updates) {
+    const comics = await this.getComics();
     const index = comics.findIndex(c => c.id === id);
     if (index !== -1) {
       comics[index] = { ...comics[index], ...updates };
-      this.save(this.KEYS.COMICS, comics);
+      await this.setData('comics', comics);
       return comics[index];
     }
     return null;
   },
 
-  deleteComic(id) {
-    const comics = this.getComics();
-    this.save(this.KEYS.COMICS, comics.filter(c => c.id !== id));
+  async deleteComic(id) {
+    const comics = await this.getComics();
+    await this.setData('comics', comics.filter(c => c.id !== id));
     // حذف الفصول المرتبطة
-    const chapters = this.getChapters();
-    this.save(this.KEYS.CHAPTERS, chapters.filter(ch => ch.comicId !== id));
+    const chapters = await this.getChapters();
+    await this.setData('chapters', chapters.filter(ch => ch.comicId !== id));
   },
 
   // ---------- إدارة الفصول ----------
-  getChapters(comicId) {
-    const chapters = this.load(this.KEYS.CHAPTERS) || [];
+  async getChapters(comicId) {
+    const data = await this.getData('chapters');
+    let chapters = data ? Object.values(data) : [];
     if (comicId) {
-      return chapters.filter(ch => ch.comicId === comicId).sort((a, b) => a.number - b.number);
+      chapters = chapters.filter(ch => ch.comicId === comicId);
+      chapters.sort((a, b) => a.number - b.number);
     }
     return chapters;
   },
 
-  getChapter(comicId, chapterNumber) {
-    const chapters = this.getChapters(comicId);
+  async getChapter(comicId, chapterNumber) {
+    const chapters = await this.getChapters(comicId);
     return chapters.find(ch => ch.number === chapterNumber);
   },
 
-  addChapter(chapter) {
-    const chapters = this.load(this.KEYS.CHAPTERS) || [];
+  async addChapter(chapter) {
+    const chapters = await this.getData('chapters') || [];
     chapter.id = Date.now();
     chapter.createdAt = new Date().toISOString();
     chapters.push(chapter);
-    this.save(this.KEYS.CHAPTERS, chapters);
+    await this.setData('chapters', chapters);
     return chapter;
   },
 
-  updateChapter(id, updates) {
-    const chapters = this.load(this.KEYS.CHAPTERS) || [];
+  async updateChapter(id, updates) {
+    const chapters = await this.getData('chapters') || [];
     const index = chapters.findIndex(ch => ch.id === id);
     if (index !== -1) {
       chapters[index] = { ...chapters[index], ...updates };
-      this.save(this.KEYS.CHAPTERS, chapters);
+      await this.setData('chapters', chapters);
       return chapters[index];
     }
     return null;
   },
 
-  deleteChapter(id) {
-    const chapters = this.load(this.KEYS.CHAPTERS) || [];
-    this.save(this.KEYS.CHAPTERS, chapters.filter(ch => ch.id !== id));
+  async deleteChapter(id) {
+    const chapters = await this.getData('chapters') || [];
+    await this.setData('chapters', chapters.filter(ch => ch.id !== id));
   },
 
   // ---------- إدارة التصنيفات ----------
-  getCategories() {
-    return this.load(this.KEYS.CATEGORIES) || [];
+  async getCategories() {
+    const data = await this.getData('categories');
+    return data ? (Array.isArray(data) ? data : Object.values(data)) : [];
   },
 
-  addCategory(category) {
-    const categories = this.getCategories();
+  async addCategory(category) {
+    const categories = await this.getCategories();
     category.id = Date.now();
     categories.push(category);
-    this.save(this.KEYS.CATEGORIES, categories);
+    await this.setData('categories', categories);
     return category;
   },
 
-  deleteCategory(id) {
-    const categories = this.getCategories();
-    this.save(this.KEYS.CATEGORIES, categories.filter(c => c.id !== id));
+  async deleteCategory(id) {
+    const categories = await this.getCategories();
+    await this.setData('categories', categories.filter(c => c.id !== id));
   },
 
   // ---------- البحث والفلترة ----------
-  searchComics(query) {
-    const comics = this.getComics();
+  async searchComics(query) {
+    const comics = await this.getComics();
     const q = query.toLowerCase();
     return comics.filter(c =>
       c.title.toLowerCase().includes(q) ||
@@ -186,78 +201,74 @@ const DB = {
     );
   },
 
-  getComicsByCategory(category) {
-    return this.getComics().filter(c => c.category === category);
+  async getComicsByCategory(category) {
+    const comics = await this.getComics();
+    return comics.filter(c => c.category === category);
   },
 
-  getLatestComics(limit = 20) {
-    return this.getComics()
+  async getLatestComics(limit = 20) {
+    const comics = await this.getComics();
+    return comics
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, limit);
   },
 
-  getMostViewedComics(limit = 20) {
-    return this.getComics()
-      .sort((a, b) => b.views - a.views)
+  async getMostViewedComics(limit = 20) {
+    const comics = await this.getComics();
+    return comics
+      .sort((a, b) => (b.views || 0) - (a.views || 0))
       .slice(0, limit);
   },
 
   // ---------- المشاهدات ----------
-  incrementViews(comicId) {
-    const views = this.load(this.KEYS.VIEWS) || {};
-    views[comicId] = (views[comicId] || 0) + 1;
-    this.save(this.KEYS.VIEWS, views);
-    // تحديث عداد المشاهدات في الكوميكس
-    const comic = this.getComic(comicId);
+  async incrementViews(comicId) {
+    const comic = await this.getComic(comicId);
     if (comic) {
-      this.updateComic(comicId, { views: views[comicId] });
+      await this.updateComic(comicId, { views: (comic.views || 0) + 1 });
     }
   },
 
-  getViews(comicId) {
-    const views = this.load(this.KEYS.VIEWS) || {};
-    return views[comicId] || 0;
-  },
-
   // ---------- التقييم ----------
-  rateComic(comicId, rating) {
-    const ratings = this.load(this.KEYS.RATINGS) || {};
-    const comic = this.getComic(comicId);
+  async rateComic(comicId, rating) {
+    const comic = await this.getComic(comicId);
     if (!comic) return;
 
-    const oldRating = ratings[comicId] || 0;
-    ratings[comicId] = rating;
-    this.save(this.KEYS.RATINGS, ratings);
-
-    // حساب متوسط التقييم
-    const totalRating = (comic.rating * comic.ratingCount) - oldRating + rating;
-    const newCount = oldRating === 0 ? comic.ratingCount + 1 : comic.ratingCount;
-    this.updateComic(comicId, {
+    const totalRating = (comic.rating || 0) * (comic.ratingCount || 0) + rating;
+    const newCount = (comic.ratingCount || 0) + 1;
+    await this.updateComic(comicId, {
       rating: totalRating / newCount,
       ratingCount: newCount
     });
   },
 
-  getUserRating(comicId) {
-    const ratings = this.load(this.KEYS.RATINGS) || {};
-    return ratings[comicId] || 0;
+  // ---------- الإحصائيات ----------
+  async getStats() {
+    const comics = await this.getComics();
+    const chapters = await this.getData('chapters') || [];
+    const chaptersList = Array.isArray(chapters) ? chapters : Object.values(chapters);
+    const totalViews = comics.reduce((sum, c) => sum + (c.views || 0), 0);
+    return {
+      totalComics: comics.length,
+      totalChapters: chaptersList.length,
+      totalViews: totalViews,
+      publishedComics: comics.filter(c => c.status === 'published').length,
+      draftComics: comics.filter(c => c.status === 'draft').length
+    };
   },
 
-  // ---------- موضع القراءة ----------
-  saveReadingPosition(comicId, chapterNumber, page) {
-    const positions = this.load(this.KEYS.READING_POS) || {};
-    positions[`${comicId}_${chapterNumber}`] = page;
-    this.save(this.KEYS.READING_POS, positions);
+  // ---------- الإعدادات ----------
+  async getSettings() {
+    const data = await this.getData('settings');
+    return data || { siteName: 'كوميكس عربية', theme: 'dark', itemsPerPage: 20 };
   },
 
-  getReadingPosition(comicId, chapterNumber) {
-    const positions = this.load(this.KEYS.READING_POS) || {};
-    return positions[`${comicId}_${chapterNumber}`] || 0;
+  async saveSettings(settings) {
+    await this.setData('settings', settings);
   },
 
   // ---------- تسجيل الدخول ----------
-  login(username, password) {
-    const admin = this.load(this.KEYS.ADMIN);
+  async login(username, password) {
+    const admin = await this.getData('admin');
     if (admin && admin.username === username && admin.password === btoa(password)) {
       sessionStorage.setItem('comicx_admin_auth', 'true');
       return true;
@@ -273,21 +284,12 @@ const DB = {
     sessionStorage.removeItem('comicx_admin_auth');
   },
 
-  // ---------- الإحصائيات ----------
-  getStats() {
-    const comics = this.getComics();
-    const chapters = this.getChapters();
-    const totalViews = comics.reduce((sum, c) => sum + (c.views || 0), 0);
-    return {
-      totalComics: comics.length,
-      totalChapters: chapters.length,
-      totalViews: totalViews,
-      publishedComics: comics.filter(c => c.status === 'published').length,
-      draftComics: comics.filter(c => c.status === 'draft').length
-    };
-  },
-
+  async changePassword(currentPass, newPass) {
+    const admin = await this.getData('admin');
+    if (admin.password !== btoa(currentPass)) {
+      return { success: false, message: 'كلمة المرور الحالية غير صحيحة' };
+    }
+    await this.updateData('admin', { password: btoa(newPass) });
+    return { success: true, message: 'تم تغيير كلمة المرور بنجاح' };
+  }
 };
-
-// تهيئة قاعدة البيانات عند التحميل
-DB.init();

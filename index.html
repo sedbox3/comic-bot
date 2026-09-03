@@ -37,6 +37,10 @@
   
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="img/favicon.png">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <!-- الشريط العلوي -->
@@ -157,10 +161,13 @@
   <script src="js/db.js"></script>
   <script src="js/ui.js"></script>
   <script>
-    // تحميل البيانات
-    document.addEventListener('DOMContentLoaded', function() {
+    // تحميل البيانات من Firebase
+    document.addEventListener('DOMContentLoaded', async function() {
+      // تهيئة Firebase
+      await DB.init();
+      
       // تحميل أحدث الإصدارات
-      const latest = DB.getLatestComics(8);
+      const latest = await DB.getLatestComics(8);
       if (latest.length === 0) {
         document.getElementById('latestComics').innerHTML = `
           <div class="empty-state">
@@ -173,7 +180,7 @@
       }
       
       // تحميل الأكثر قراءة
-      const popular = DB.getMostViewedComics(8);
+      const popular = await DB.getMostViewedComics(8);
       if (popular.length > 0) {
         document.getElementById('popularComics').innerHTML = UI.renderComicsGrid(popular);
       } else {
@@ -186,32 +193,28 @@
       }
       
       // تحميل التصنيفات
-      const categories = DB.getCategories();
+      const categories = await DB.getCategories();
       const categoriesContainer = document.getElementById('categoriesList');
-      categoriesContainer.innerHTML = categories.map(cat => {
-        const count = DB.getComicsByCategory(cat.name).length;
-        return `
-          <a href="browse.html?category=${cat.name}" style="
-            display: inline-flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem 1.5rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            margin: 0.5rem;
-            transition: all 0.3s ease;
-            color: var(--text-primary);
-          " onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='translateY(-3px)'"
-             onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none'">
-            <i class="fas fa-folder" style="color: var(--accent); font-size: 1.2rem;"></i>
-            <div>
-              <div style="font-weight: 700;">${cat.name}</div>
-              <div style="font-size: 0.8rem; color: var(--text-secondary);">${count} كوميكس</div>
-            </div>
-          </a>
-        `;
-      }).join('');
+      categoriesContainer.innerHTML = categories.map(cat => `
+        <a href="browse.html?category=${cat.name}" style="
+          display: inline-flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 1rem 1.5rem;
+          background: var(--bg-card);
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          margin: 0.5rem;
+          transition: all 0.3s ease;
+          color: var(--text-primary);
+        " onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='translateY(-3px)'"
+           onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none'">
+          <i class="fas fa-folder" style="color: var(--accent); font-size: 1.2rem;"></i>
+          <div>
+            <div style="font-weight: 700;">${cat.name}</div>
+          </div>
+        </a>
+      `).join('');
 
       // تحميل التصنيفات في الفوتر
       document.getElementById('footerCategories').innerHTML = 

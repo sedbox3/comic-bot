@@ -9,6 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <nav class="navbar">
@@ -127,25 +131,36 @@
 
     let uploadedFiles = [];
 
-    document.addEventListener('DOMContentLoaded', function() {
-      loadComicsList();
-      loadChapters();
+    document.addEventListener('DOMContentLoaded', async function() {
+      // تهيئة Firebase
+      await DB.init();
+      
+      await loadComicsList();
+      await loadChapters();
       setupDropZone();
       UI.loadTheme();
     });
 
-    function loadComicsList() {
-      const comics = DB.getComics();
+    async function loadComicsList() {
+      const comics = await DB.getComics();
       const options = comics.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
       document.getElementById('chapterComic').innerHTML = options;
       document.getElementById('filterComic').innerHTML = 
         '<option value="">جميع الفصول</option>' + options;
     }
 
-    function loadChapters() {
+    async function loadChapters() {
       const filterId = document.getElementById('filterComic').value;
-      let chapters = filterId ? DB.getChapters(parseInt(filterId)) : (DB.load(DB.KEYS.CHAPTERS) || []);
-      chapters.sort((a, b) => a.comicId - b.comicId || a.number - b.number);
+      let chapters = await DB.getChapters(filterId ? parseInt(filterId) : null);
+      
+      if (filterId) {
+        // فصول كوميكس محدد
+      } else {
+        // جميع الفصول
+        const allData = await DB.getData('chapters') || [];
+        chapters = Array.isArray(allData) ? allData : Object.values(allData);
+        chapters.sort((a, b) => a.comicId - b.comicId || a.number - b.number);
+      }
 
       if (chapters.length === 0) {
         document.getElementById('chaptersTable').innerHTML = `
@@ -156,7 +171,7 @@
         return;
       }
 
-      const comics = DB.getComics();
+      const comics = await DB.getComics();
       document.getElementById('chaptersTable').innerHTML = `
         <div style="overflow-x: auto;">
           <table class="admin-table">
@@ -265,37 +280,40 @@
       renderPreview();
     }
 
-    function saveChapter(e) {
+    async function saveChapter(e) {
       e.preventDefault();
       const editId = document.getElementById('editId').value;
       const comicId = parseInt(document.getElementById('chapterComic').value);
       const number = parseInt(document.getElementById('chapterNumber').value);
       const title = document.getElementById('chapterTitle').value.trim();
 
-      // استخدام الصور المحملة أو إنشاء صور تجريبية
+      // استخدام الصور المحملة
       let images = uploadedFiles.map(f => f.data);
       
       if (images.length === 0 && !editId) {
-        // صور تجريبية إذا لم يتم رفع صور
-        images = Array.from({length: 5}, (_, i) => 
-          `https://picsum.photos/seed/ch${number}_${i+1}/800/1200`
-        );
+        UI.showAlert('يرجى رفع صور للصفحات!', 'warning');
+        return;
       }
 
       if (editId) {
-        DB.updateChapter(parseInt(editId), { comicId, number, title, images });
+        const chapters = await DB.getData('chapters') || [];
+        const chapter = chapters.find(ch => ch.id === parseInt(editId));
+        if (chapter && images.length === 0) {
+          images = chapter.images;
+        }
+        await DB.updateChapter(parseInt(editId), { comicId, number, title, images });
         showAlert('تم تحديث الفصل بنجاح!', 'success');
       } else {
-        DB.addChapter({ comicId, number, title, images });
+        await DB.addChapter({ comicId, number, title, images });
         showAlert('تم إضافة الفصل بنجاح!', 'success');
       }
 
       hideForm();
-      loadChapters();
+      await loadChapters();
     }
 
-    function editChapter(id) {
-      const chapters = DB.load(DB.KEYS.CHAPTERS) || [];
+    async function editChapter(id) {
+      const chapters = await DB.getData('chapters') || [];
       const chapter = chapters.find(ch => ch.id === id);
       if (!chapter) return;
 
@@ -312,11 +330,11 @@
       document.getElementById('chapterForm').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function deleteChapter(id) {
+    async function deleteChapter(id) {
       if (confirm('هل أنت متأكد من حذف هذا الفصل؟')) {
-        DB.deleteChapter(id);
+        await DB.deleteChapter(id);
         showAlert('تم حذف الفصل بنجاح.', 'danger');
-        loadChapters();
+        await loadChapters();
       }
     }
 

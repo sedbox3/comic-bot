@@ -9,6 +9,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <nav class="navbar">
@@ -84,8 +88,11 @@
       window.location.href = 'login.html';
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-      const stats = DB.getStats();
+    document.addEventListener('DOMContentLoaded', async function() {
+      // تهيئة Firebase
+      await DB.init();
+      
+      const stats = await DB.getStats();
 
       // عرض الإحصائيات
       document.getElementById('statsGrid').innerHTML = `
@@ -112,7 +119,7 @@
       `;
 
       // أكثر الأعمال قراءة
-      const topComics = DB.getMostViewedComics(5);
+      const topComics = await DB.getMostViewedComics(5);
       document.getElementById('topComics').innerHTML = topComics.length > 0 ? `
         <div style="overflow-x: auto;">
           <table class="admin-table">

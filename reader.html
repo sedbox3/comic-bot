@@ -9,6 +9,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  
   <style>
     body { overflow: hidden; }
     .reader-container { background: #000; }
@@ -69,7 +74,10 @@
   <script>
     let comicId, currentChapter, chapters, currentZoom = 1, scrollMode = true;
 
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
+      // تهيئة Firebase
+      await DB.init();
+      
       comicId = parseInt(UI.getUrlParam('id'));
       const chapterNum = parseInt(UI.getUrlParam('chapter')) || 1;
 
@@ -78,7 +86,7 @@
         return;
       }
 
-      const comic = DB.getComic(comicId);
+      const comic = await DB.getComic(comicId);
       if (!comic) {
         window.location.href = 'browse.html';
         return;
@@ -86,7 +94,7 @@
 
       document.title = `${comic.title} - قارئ الكوميكس`;
 
-      chapters = DB.getChapters(comicId);
+      chapters = await DB.getChapters(comicId);
       
       if (chapters.length === 0) {
         document.getElementById('readerBody').innerHTML = `
