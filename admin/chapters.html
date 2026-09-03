@@ -251,13 +251,38 @@
     function handleFiles(files) {
       Array.from(files).forEach(file => {
         if (file.type.startsWith('image/')) {
+          // تقليل حجم الصورة قبل الحفظ
           const reader = new FileReader();
           reader.onload = (e) => {
-            uploadedFiles.push({
-              name: file.name,
-              data: e.target.result
-            });
-            renderPreview();
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX_WIDTH = 800;
+              const MAX_HEIGHT = 1200;
+              let width = img.width;
+              let height = img.height;
+              
+              if (width > MAX_WIDTH) {
+                height = (height * MAX_WIDTH) / width;
+                width = MAX_WIDTH;
+              }
+              if (height > MAX_HEIGHT) {
+                width = (width * MAX_HEIGHT) / height;
+                height = MAX_HEIGHT;
+              }
+              
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              
+              uploadedFiles.push({
+                name: file.name,
+                data: canvas.toDataURL('image/jpeg', 0.7)
+              });
+              renderPreview();
+            };
+            img.src = e.target.result;
           };
           reader.readAsDataURL(file);
         }
@@ -282,34 +307,46 @@
 
     async function saveChapter(e) {
       e.preventDefault();
-      const editId = document.getElementById('editId').value;
-      const comicId = parseInt(document.getElementById('chapterComic').value);
-      const number = parseInt(document.getElementById('chapterNumber').value);
-      const title = document.getElementById('chapterTitle').value.trim();
-
-      // استخدام الصور المحملة
-      let images = uploadedFiles.map(f => f.data);
       
-      if (images.length === 0 && !editId) {
-        UI.showAlert('يرجى رفع صور للصفحات!', 'warning');
-        return;
-      }
+      try {
+        const editId = document.getElementById('editId').value;
+        const comicId = parseInt(document.getElementById('chapterComic').value);
+        const number = parseInt(document.getElementById('chapterNumber').value);
+        const title = document.getElementById('chapterTitle').value.trim();
 
-      if (editId) {
-        const chapters = await DB.getData('chapters') || [];
-        const chapter = chapters.find(ch => ch.id === parseInt(editId));
-        if (chapter && images.length === 0) {
-          images = chapter.images;
+        if (!comicId || !number || !title) {
+          UI.showAlert('يرجى ملء جميع الحقول المطلوبة!', 'warning');
+          return;
         }
-        await DB.updateChapter(parseInt(editId), { comicId, number, title, images });
-        showAlert('تم تحديث الفصل بنجاح!', 'success');
-      } else {
-        await DB.addChapter({ comicId, number, title, images });
-        showAlert('تم إضافة الفصل بنجاح!', 'success');
-      }
 
-      hideForm();
-      await loadChapters();
+        // استخدام الصور المحملة
+        let images = uploadedFiles.map(f => f.data);
+        
+        if (images.length === 0 && !editId) {
+          UI.showAlert('يرجى رفع صور للصفحات!', 'warning');
+          return;
+        }
+
+        if (editId) {
+          const chapters = await DB.getData('chapters') || [];
+          const chaptersList = Array.isArray(chapters) ? chapters : Object.values(chapters);
+          const chapter = chaptersList.find(ch => ch.id === parseInt(editId));
+          if (chapter && images.length === 0) {
+            images = chapter.images;
+          }
+          await DB.updateChapter(parseInt(editId), { comicId, number, title, images });
+          showAlert('تم تحديث الفصل بنجاح!', 'success');
+        } else {
+          await DB.addChapter({ comicId, number, title, images });
+          showAlert('تم إضافة الفصل بنجاح!', 'success');
+        }
+
+        hideForm();
+        await loadChapters();
+      } catch (error) {
+        console.error('خطأ في حفظ الفصل:', error);
+        UI.showAlert('حدث خطأ أثناء الحفظ! تأكد من حجم الصور.', 'danger');
+      }
     }
 
     async function editChapter(id) {
