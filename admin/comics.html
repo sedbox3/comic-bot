@@ -227,25 +227,37 @@
 
     async function saveComic(e) {
       e.preventDefault();
-      const editId = document.getElementById('editId').value;
-      const data = {
-        title: document.getElementById('comicTitle').value.trim(),
-        description: document.getElementById('comicDesc').value.trim(),
-        category: document.getElementById('comicCategory').value,
-        cover: document.getElementById('comicCover').value.trim(),
-        status: document.getElementById('comicStatus').value
-      };
+      
+      try {
+        const editId = document.getElementById('editId').value;
+        const title = document.getElementById('comicTitle').value.trim();
+        const description = document.getElementById('comicDesc').value.trim();
+        const category = document.getElementById('comicCategory').value;
+        const cover = document.getElementById('comicCover').value.trim();
+        const status = document.getElementById('comicStatus').value;
 
-      if (editId) {
-        await DB.updateComic(parseInt(editId), data);
-        showAlert('تم تحديث الكوميكس بنجاح!', 'success');
-      } else {
-        await DB.addComic(data);
-        showAlert('تم إضافة الكوميكس بنجاح!', 'success');
+        if (!title || !description || !category || !cover) {
+          UI.showAlert('يرجى ملء جميع الحقول المطلوبة!', 'warning');
+          return;
+        }
+
+        const data = { title, description, category, cover, status };
+
+        if (editId) {
+          await DB.updateComic(parseInt(editId), data);
+          showAlert('تم تحديث الكوميكس بنجاح!', 'success');
+        } else {
+          const result = await DB.addComic(data);
+          console.log('تمت الإضافة:', result);
+          showAlert('تم إضافة الكوميكس بنجاح!', 'success');
+        }
+
+        hideForm();
+        await loadComics();
+      } catch (error) {
+        console.error('خطأ في الحفظ:', error);
+        UI.showAlert('حدث خطأ أثناء الحفظ: ' + error.message, 'danger');
       }
-
-      hideForm();
-      await loadComics();
     }
 
     async function editComic(id) {
