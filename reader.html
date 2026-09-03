@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+  <title>قراءة الكوميكس - كوميكس عربية</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { overflow: hidden; }
+    .reader-container { background: #000; }
+  </style>
+</head>
+<body>
+  <div class="reader-container">
+    <!-- رأس القارئ -->
+    <div class="reader-header">
+      <a id="backBtn" href="#" class="btn btn-sm" style="background: rgba(255,255,255,0.1); color: #fff;">
+        <i class="fas fa-arrow-right"></i> رجوع
+      </a>
+      <span class="reader-title" id="readerTitle">جاري التحميل...</span>
+      <div class="reader-controls">
+        <button onclick="toggleReaderMode()" title="تبديل وضع القراءة" id="modeBtn">
+          <i class="fas fa-columns"></i>
+        </button>
+        <button onclick="zoomIn()" title="تكبير">
+          <i class="fas fa-search-plus"></i>
+        </button>
+        <button onclick="zoomOut()" title="تصغير">
+          <i class="fas fa-search-minus"></i>
+        </button>
+        <button onclick="toggleFullscreen()" title="ملء الشاشة">
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- جسم القارئ -->
+    <div class="reader-body" id="readerBody">
+      <div class="loader" id="loader">
+        <div class="spinner"></div>
+      </div>
+    </div>
+
+    <!-- ذيل القارئ -->
+    <div class="reader-footer">
+      <button class="btn btn-sm" onclick="prevChapter()" id="prevChapterBtn" style="background: rgba(255,255,255,0.1); color: #fff;">
+        <i class="fas fa-arrow-right"></i> الفصل السابق
+      </button>
+      
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span id="pageInfo">صفحة 0 / 0</span>
+      </div>
+      
+      <select id="chapterSelect" onchange="goToChapter(this.value)" style="min-width: 120px;">
+      </select>
+      
+      <button class="btn btn-sm" onclick="nextChapter()" id="nextChapterBtn" style="background: rgba(255,255,255,0.1); color: #fff;">
+        الفصل التالي <i class="fas fa-arrow-left"></i>
+      </button>
+    </div>
+  </div>
+
+  <script src="js/db.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    let comicId, currentChapter, chapters, currentZoom = 1, scrollMode = true;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      comicId = parseInt(UI.getUrlParam('id'));
+      const chapterNum = parseInt(UI.getUrlParam('chapter')) || 1;
+
+      if (!comicId) {
+        window.location.href = 'browse.html';
+        return;
+      }
+
+      const comic = DB.getComic(comicId);
+      if (!comic) {
+        window.location.href = 'browse.html';
+        return;
+      }
+
+      document.title = `${comic.title} - قارئ الكوميكس`;
+
+      chapters = DB.getChapters(comicId);
+      
+      if (chapters.length === 0) {
+        document.getElementById('readerBody').innerHTML = `
+          <div class="empty-state" style="color: #fff;">
+            <div class="empty-icon"><i class="fas fa-book-open"></i></div>
+            <h3>لا توجد فصول بعد</h3>
+            <p>لم يتم نشر أي فصول لهذا الكوميكس.</p>
+          </div>`;
+        return;
+      }
+
+      // ربط زر الرجوع
+      document.getElementById('backBtn').href = `comic.html?id=${comicId}`;
+
+      // ملء قائمة الفصول
+      const select = document.getElementById('chapterSelect');
+      chapters.forEach(ch => {
+        const option = document.createElement('option');
+        option.value = ch.number;
+        option.textContent = `الفصل ${ch.number}: ${ch.title}`;
+        select.appendChild(option);
+      });
+
+      // تحميل الفصل
+      loadChapter(chapterNum);
+
+      // استعادة وضع القراءة
+      const savedMode = localStorage.getItem('comicx_reader_mode');
+      if (savedMode === 'page') {
+        scrollMode = false;
+        document.getElementById('readerBody').classList.add('page-mode');
+      }
+    });
+
+    function loadChapter(number) {
+      currentChapter = chapters.find(ch => ch.number === number);
+      if (!currentChapter) return;
+
+      document.getElementById('readerTitle').textContent = 
+        `الفصل ${currentChapter.number}: ${currentChapter.title}`;
+      document.getElementById('chapterSelect').value = number;
+
+      const body = document.getElementById('readerBody');
+      body.innerHTML = '';
+      
+      if (scrollMode) {
+        // وضع التمرير العمودي
+        currentChapter.images.forEach((img, index) => {
+          const imgEl = document.createElement('img');
+          imgEl.src = img;
+          imgEl.alt = `صفحة ${index + 1}`;
+          imgEl.loading = 'lazy';
+          imgEl.style.transform = `scale(${currentZoom})`;
+          imgEl.style.transformOrigin = 'top center';
+          body.appendChild(imgEl);
+        });
+      } else {
+        // وضع تقليب الصفحات
+        showPage(0);
+      }
+
+      updatePageInfo();
+      updateChapterButtons();
+
+      // حفظ موضع القراءة
+      DB.saveReadingPosition(comicId, number, 0);
+    }
+
+    function showPage(index) {
+      const body = document.getElementById('readerBody');
+      body.innerHTML = '';
+      
+      if (index >= 0 && index < currentChapter.images.length) {
+        const img = document.createElement('img');
+        img.src = currentChapter.images[index];
+        img.alt = `صفحة ${index + 1}`;
+        img.style.transform = `scale(${currentZoom})`;
+        body.appendChild(img);
+        body.dataset.currentPage = index;
+        updatePageInfo();
+        DB.saveReadingPosition(comicId, currentChapter.number, index);
+      }
+    }
+
+    function updatePageInfo() {
+      const body = document.getElementById('readerBody');
+      if (scrollMode) {
+        document.getElementById('pageInfo').textContent = 
+          `${currentChapter.images.length} صفحة`;
+      } else {
+        const current = parseInt(body.dataset.currentPage || 0) + 1;
+        document.getElementById('pageInfo').textContent = 
+          `صفحة ${current} / ${currentChapter.images.length}`;
+      }
+    }
+
+    function updateChapterButtons() {
+      const firstChapter = chapters[0].number;
+      const lastChapter = chapters[chapters.length - 1].number;
+      document.getElementById('prevChapterBtn').disabled = currentChapter.number <= firstChapter;
+      document.getElementById('nextChapterBtn').disabled = currentChapter.number >= lastChapter;
+    }
+
+    function goToChapter(number) {
+      loadChapter(parseInt(number));
+    }
+
+    function prevChapter() {
+      if (currentChapter.number > chapters[0].number) {
+        loadChapter(currentChapter.number - 1);
+      }
+    }
+
+    function nextChapter() {
+      if (currentChapter.number < chapters[chapters.length - 1].number) {
+        loadChapter(currentChapter.number + 1);
+      }
+    }
+
+    function zoomIn() {
+      currentZoom = Math.min(currentZoom + 0.25, 3);
+      applyZoom();
+    }
+
+    function zoomOut() {
+      currentZoom = Math.max(currentZoom - 0.25, 0.5);
+      applyZoom();
+    }
+
+    function applyZoom() {
+      document.querySelectorAll('#readerBody img').forEach(img => {
+        img.style.transform = `scale(${currentZoom})`;
+      });
+    }
+
+    function toggleReaderMode() {
+      scrollMode = !scrollMode;
+      const body = document.getElementById('readerBody');
+      const btn = document.getElementById('modeBtn');
+      
+      if (scrollMode) {
+        body.classList.remove('page-mode');
+        btn.innerHTML = '<i class="fas fa-columns"></i>';
+        localStorage.setItem('comicx_reader_mode', 'scroll');
+        loadChapter(currentChapter.number);
+      } else {
+        body.classList.add('page-mode');
+        btn.innerHTML = '<i class="fas fa-align-justify"></i>';
+        localStorage.setItem('comicx_reader_mode', 'page');
+        loadChapter(currentChapter.number);
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // التحكم بلوحة المفاتيح
+    document.addEventListener('keydown', function(e) {
+      if (scrollMode) return;
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+        const body = document.getElementById('readerBody');
+        const current = parseInt(body.dataset.currentPage || 0);
+        if (current > 0) showPage(current - 1);
+      }
+      
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+        const body = document.getElementById('readerBody');
+        const current = parseInt(body.dataset.currentPage || 0);
+        if (current < currentChapter.images.length - 1) {
+          showPage(current + 1);
+        } else {
+          nextChapter();
+        }
+      }
+    });
+
+    // السحب على الموبايل
+    let touchStartX = 0;
+    document.addEventListener('touchstart', function(e) {
+      touchStartX = e.changedTouches[0].screenX;
+    });
+
+    document.addEventListener('touchend', function(e) {
+      if (scrollMode) return;
+      const touchEndX = e.changedTouches[0].screenX;
+      const diff = touchStartX - touchEndX;
+      
+      const body = document.getElementById('readerBody');
+      const current = parseInt(body.dataset.currentPage || 0);
+      
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) {
+          // السحب لليسار = الصفحة التالية
+          if (current < currentChapter.images.length - 1) {
+            showPage(current + 1);
+          } else {
+            nextChapter();
+          }
+        } else {
+          // السحب لليمين = الصفحة السابقة
+          if (current > 0) showPage(current - 1);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

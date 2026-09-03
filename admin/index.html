@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم - كوميكس عربية</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="../index.html" class="navbar-brand">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent); width:32px; height:32px;">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+      </svg>
+      لوحة التحكم
+    </a>
+    <div class="navbar-actions">
+      <a href="../index.html" class="btn btn-sm btn-secondary">
+        <i class="fas fa-external-link-alt"></i> زيارة الموقع
+      </a>
+      <button class="theme-toggle" onclick="UI.toggleTheme()" title="تبديل الثيم">
+        <i class="fas fa-sun"></i>
+      </button>
+      <button class="btn btn-sm btn-danger" onclick="handleLogout()">
+        <i class="fas fa-sign-out-alt"></i> خروج
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="admin-layout">
+      <!-- الشريط الجانبي -->
+      <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-menu">
+          <a href="index.html" class="menu-item active">
+            <i class="fas fa-chart-pie"></i> الإحصائيات
+          </a>
+          <a href="comics.html" class="menu-item">
+            <i class="fas fa-book"></i> الكوميكس
+          </a>
+          <a href="chapters.html" class="menu-item">
+            <i class="fas fa-book-open"></i> الفصول
+          </a>
+          <a href="categories.html" class="menu-item">
+            <i class="fas fa-folder"></i> التصنيفات
+          </a>
+          <a href="settings.html" class="menu-item">
+            <i class="fas fa-cog"></i> الإعدادات
+          </a>
+        </div>
+      </aside>
+
+      <!-- المحتوى الرئيسي -->
+      <div class="admin-main">
+        <h1 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 2rem;">
+          <i class="fas fa-chart-pie" style="color: var(--accent);"></i>
+          لوحة الإحصائيات
+        </h1>
+
+        <!-- بطاقات الإحصائيات -->
+        <div class="admin-stats-grid" id="statsGrid"></div>
+
+        <!-- أكثر الأعمال قراءة -->
+        <div style="margin-top: 2rem;">
+          <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem;">
+            <i class="fas fa-fire" style="color: var(--accent);"></i>
+            أكثر الأعمال قراءة
+          </h2>
+          <div id="topComics"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/db.js"></script>
+  <script src="../js/ui.js"></script>
+  <script>
+    // التحقق من الصلاحيات
+    if (!DB.isAdmin()) {
+      window.location.href = 'login.html';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      const stats = DB.getStats();
+
+      // عرض الإحصائيات
+      document.getElementById('statsGrid').innerHTML = `
+        <div class="admin-stat-card fade-in">
+          <div class="stat-number">${stats.totalComics}</div>
+          <div class="stat-label">إجمالي الكوميكس</div>
+        </div>
+        <div class="admin-stat-card fade-in">
+          <div class="stat-number">${stats.publishedComics}</div>
+          <div class="stat-label">منشور</div>
+        </div>
+        <div class="admin-stat-card fade-in">
+          <div class="stat-number">${stats.draftComics}</div>
+          <div class="stat-label">مسودات</div>
+        </div>
+        <div class="admin-stat-card fade-in">
+          <div class="stat-number">${stats.totalChapters}</div>
+          <div class="stat-label">إجمالي الفصول</div>
+        </div>
+        <div class="admin-stat-card fade-in">
+          <div class="stat-number">${UI.formatNumber(stats.totalViews)}</div>
+          <div class="stat-label">إجمالي المشاهدات</div>
+        </div>
+      `;
+
+      // أكثر الأعمال قراءة
+      const topComics = DB.getMostViewedComics(5);
+      document.getElementById('topComics').innerHTML = topComics.length > 0 ? `
+        <div style="overflow-x: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>العنوان</th>
+                <th>التصنيف</th>
+                <th>المشاهدات</th>
+                <th>التقييم</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${topComics.map((c, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td><strong>${c.title}</strong></td>
+                  <td>${c.category}</td>
+                  <td>${UI.formatNumber(c.views || 0)}</td>
+                  <td style="color: var(--star);">★ ${c.rating ? c.rating.toFixed(1) : '0.0'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      ` : '<div class="empty-state"><p>لا توجد بيانات بعد.</p></div>';
+
+      UI.loadTheme();
+    });
+
+    function handleLogout() {
+      DB.logout();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

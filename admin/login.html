@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول - لوحة التحكم</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="../index.html" class="navbar-brand">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent); width:32px; height:32px;">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+      </svg>
+      كوميكس عربية
+    </a>
+    <div class="navbar-actions">
+      <button class="theme-toggle" onclick="UI.toggleTheme()" title="تبديل الثيم">
+        <i class="fas fa-sun"></i>
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="login-page">
+      <div class="login-card fade-in">
+        <h2>لوحة التحكم</h2>
+        <p class="login-subtitle">تسجيل الدخول للمدير فقط</p>
+        
+        <div id="alertBox"></div>
+        
+        <form id="loginForm" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label><i class="fas fa-user"></i> اسم المستخدم</label>
+            <input type="text" id="username" placeholder="أدخل اسم المستخدم" required autocomplete="username">
+          </div>
+          
+          <div class="form-group">
+            <label><i class="fas fa-lock"></i> كلمة المرور</label>
+            <div style="position: relative;">
+              <input type="password" id="password" placeholder="أدخل كلمة المرور" required autocomplete="current-password">
+              <button type="button" onclick="togglePassword()" 
+                      style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); 
+                             background: none; color: var(--text-secondary);">
+                <i class="fas fa-eye" id="eyeIcon"></i>
+              </button>
+            </div>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt"></i> تسجيل الدخول
+          </button>
+        </form>
+        
+        <div style="margin-top: 1.5rem; text-align: center;">
+          <a href="../index.html" style="color: var(--text-secondary); font-size: 0.9rem;">
+            <i class="fas fa-arrow-right"></i> العودة للموقع
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/db.js"></script>
+  <script src="../js/ui.js"></script>
+  <script>
+    // التحقق من تسجيل الدخول مسبقاً
+    if (DB.isAdmin()) {
+      window.location.href = 'index.html';
+    }
+
+    function handleLogin(e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+      
+      if (DB.login(username, password)) {
+        window.location.href = 'index.html';
+      } else {
+        document.getElementById('alertBox').innerHTML = `
+          <div class="alert alert-danger">اسم المستخدم أو كلمة المرور غير صحيحة</div>
+        `;
+      }
+    }
+
+    function togglePassword() {
+      const input = document.getElementById('password');
+      const icon = document.getElementById('eyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    }
+  </script>
+</body>
+</html>

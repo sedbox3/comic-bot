@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة الكوميكس - لوحة التحكم</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="../index.html" class="navbar-brand">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent); width:32px; height:32px;">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+      </svg>
+      لوحة التحكم
+    </a>
+    <div class="navbar-actions">
+      <a href="../index.html" class="btn btn-sm btn-secondary">
+        <i class="fas fa-external-link-alt"></i> زيارة الموقع
+      </a>
+      <button class="btn btn-sm btn-danger" onclick="handleLogout()">
+        <i class="fas fa-sign-out-alt"></i> خروج
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="sidebar-menu">
+          <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> الإحصائيات</a>
+          <a href="comics.html" class="menu-item active"><i class="fas fa-book"></i> الكوميكس</a>
+          <a href="chapters.html" class="menu-item"><i class="fas fa-book-open"></i> الفصول</a>
+          <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> التصنيفات</a>
+          <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> الإعدادات</a>
+        </div>
+      </aside>
+
+      <div class="admin-main">
+        <div class="section-header" style="margin-bottom: 2rem;">
+          <h1 style="font-size: 1.8rem; font-weight: 800;">
+            <i class="fas fa-book" style="color: var(--accent);"></i>
+            إدارة الكوميكس
+          </h1>
+          <button class="btn btn-primary" onclick="showAddForm()">
+            <i class="fas fa-plus"></i> إضافة كوميكس جديد
+          </button>
+        </div>
+
+        <div id="alertBox"></div>
+
+        <!-- نموذج الإضافة/التعديل -->
+        <div id="comicForm" class="admin-form" style="display: none; margin-bottom: 2rem;">
+          <h3 id="formTitle" style="margin-bottom: 1.5rem; font-size: 1.2rem;">
+            <i class="fas fa-plus-circle" style="color: var(--accent);"></i>
+            إضافة كوميكس جديد
+          </h3>
+          
+          <form onsubmit="saveComic(event)">
+            <input type="hidden" id="editId" value="">
+            
+            <div class="form-group">
+              <label>عنوان الكوميكس *</label>
+              <input type="text" id="comicTitle" placeholder="أدخل العنوان" required>
+            </div>
+            
+            <div class="form-group">
+              <label>الوصف *</label>
+              <textarea id="comicDesc" placeholder="أدخل وصف القصة" required></textarea>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label>التصنيف *</label>
+                <select id="comicCategory" required></select>
+              </div>
+              
+              <div class="form-group">
+                <label>الحالة</label>
+                <select id="comicStatus">
+                  <option value="published">منشور</option>
+                  <option value="draft">مسودة</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>رابط صورة الغلاف *</label>
+              <input type="url" id="comicCover" placeholder="https://example.com/cover.jpg" required>
+              <small style="color: var(--text-secondary);">
+                يمكنك استخدام رابط من Imgur أو أي موقع لرفع الصور
+              </small>
+            </div>
+            
+            <div id="coverPreview" style="margin: 1rem 0; display: none;">
+              <img src="" alt="معاينة" style="max-width: 200px; border-radius: 8px; border: 2px solid var(--border);">
+            </div>
+            
+            <div style="display: flex; gap: 1rem;">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> حفظ
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="hideForm()">
+                <i class="fas fa-times"></i> إلغاء
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- جدول الكوميكس -->
+        <div id="comicsTable"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/db.js"></script>
+  <script src="../js/ui.js"></script>
+  <script>
+    if (!DB.isAdmin()) window.location.href = 'login.html';
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadCategories();
+      loadComics();
+      UI.loadTheme();
+    });
+
+    function loadCategories() {
+      const categories = DB.getCategories();
+      const select = document.getElementById('comicCategory');
+      select.innerHTML = categories.map(c => 
+        `<option value="${c.name}">${c.name}</option>`
+      ).join('');
+    }
+
+    function loadComics() {
+      const comics = DB.getComics();
+      
+      if (comics.length === 0) {
+        document.getElementById('comicsTable').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-book-open"></i></div>
+            <h3>لا يوجد كوميكس بعد</h3>
+            <p>ابدأ بإضافة أول كوميكس!</p>
+          </div>`;
+        return;
+      }
+
+      document.getElementById('comicsTable').innerHTML = `
+        <div style="overflow-x: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>الصورة</th>
+                <th>العنوان</th>
+                <th>التصنيف</th>
+                <th>الحالة</th>
+                <th>المشاهدات</th>
+                <th>التقييم</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${comics.map(c => `
+                <tr>
+                  <td>
+                    <img src="${c.cover}" alt="${c.title}" 
+                         style="width: 50px; height: 67px; object-fit: cover; border-radius: 6px;">
+                  </td>
+                  <td><strong>${c.title}</strong></td>
+                  <td>${c.category}</td>
+                  <td>
+                    <span style="padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+                                 background: ${c.status === 'published' ? 'rgba(46,204,113,0.15)' : 'rgba(243,156,18,0.15)'};
+                                 color: ${c.status === 'published' ? 'var(--success)' : 'var(--warning)'};">
+                      ${c.status === 'published' ? 'منشور' : 'مسودة'}
+                    </span>
+                  </td>
+                  <td>${UI.formatNumber(c.views || 0)}</td>
+                  <td style="color: var(--star);">★ ${c.rating ? c.rating.toFixed(1) : '0.0'}</td>
+                  <td>
+                    <div class="actions">
+                      <a href="../comic.html?id=${c.id}" class="btn btn-sm btn-secondary" target="_blank" title="عرض">
+                        <i class="fas fa-eye"></i>
+                      </a>
+                      <button class="btn btn-sm btn-secondary" onclick="editComic(${c.id})" title="تعديل">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn btn-sm btn-danger" onclick="deleteComic(${c.id})" title="حذف">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function showAddForm() {
+      document.getElementById('comicForm').style.display = 'block';
+      document.getElementById('formTitle').innerHTML = '<i class="fas fa-plus-circle" style="color: var(--accent);"></i> إضافة كوميكس جديد';
+      document.getElementById('editId').value = '';
+      document.getElementById('comicTitle').value = '';
+      document.getElementById('comicDesc').value = '';
+      document.getElementById('comicCover').value = '';
+      document.getElementById('comicStatus').value = 'published';
+      document.getElementById('coverPreview').style.display = 'none';
+      document.getElementById('comicForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function hideForm() {
+      document.getElementById('comicForm').style.display = 'none';
+    }
+
+    function saveComic(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editId').value;
+      const data = {
+        title: document.getElementById('comicTitle').value.trim(),
+        description: document.getElementById('comicDesc').value.trim(),
+        category: document.getElementById('comicCategory').value,
+        cover: document.getElementById('comicCover').value.trim(),
+        status: document.getElementById('comicStatus').value
+      };
+
+      if (editId) {
+        DB.updateComic(parseInt(editId), data);
+        showAlert('تم تحديث الكوميكس بنجاح!', 'success');
+      } else {
+        DB.addComic(data);
+        showAlert('تم إضافة الكوميكس بنجاح!', 'success');
+      }
+
+      hideForm();
+      loadComics();
+    }
+
+    function editComic(id) {
+      const comic = DB.getComic(id);
+      if (!comic) return;
+
+      document.getElementById('editId').value = id;
+      document.getElementById('comicTitle').value = comic.title;
+      document.getElementById('comicDesc').value = comic.description;
+      document.getElementById('comicCover').value = comic.cover;
+      document.getElementById('comicCategory').value = comic.category;
+      document.getElementById('comicStatus').value = comic.status;
+      document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit" style="color: var(--accent);"></i> تعديل الكوميكس';
+      
+      if (comic.cover) {
+        document.getElementById('coverPreview').style.display = 'block';
+        document.getElementById('coverPreview').querySelector('img').src = comic.cover;
+      }
+
+      document.getElementById('comicForm').style.display = 'block';
+      document.getElementById('comicForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function deleteComic(id) {
+      if (confirm('هل أنت متأكد من حذف هذا الكوميكس؟ سيتم حذف جميع الفصول المرتبطة أيضاً.')) {
+        DB.deleteComic(id);
+        showAlert('تم حذف الكوميكس بنجاح.', 'danger');
+        loadComics();
+      }
+    }
+
+    function showAlert(message, type) {
+      UI.showAlert(message, type);
+    }
+
+    function handleLogout() {
+      DB.logout();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

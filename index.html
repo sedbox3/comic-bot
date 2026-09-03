@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>كوميكس عربية - أكبر مكتبة كوميكس عربية مجانية</title>
+  <meta name="description" content="استمتع بآلاف القصص المصورة العربية بجودة عالية. قراءة مجانية بدون إعلانات. أكبر مكتبة كوميكس عربية.">
+  <meta name="keywords" content="كوميكس, قصص مصورة, مانجا عربية, كرتون, قراءة مجانية, كوميك عربي, manga, comics">
+  <meta name="author" content="كوميكس عربية">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://your-domain.com/">
+  <meta property="og:title" content="كوميكس عربية - أكبر مكتبة كوميكس عربية مجانية">
+  <meta property="og:description" content="استمتع بآلاف القصص المصورة العربية بجودة عالية. قراءة مجانية بدون إعلانات.">
+  <meta property="og:image" content="https://your-domain.com/img/og-image.jpg">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="كوميكس عربية - أكبر مكتبة كوميكس عربية مجانية">
+  <meta name="twitter:description" content="استمتع بآلاف القصص المصورة العربية بجودة عالية. قراءة مجانية بدون إعلانات.">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://your-domain.com/">
+  
+  <!-- الخطوط العربية -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  
+  <!-- أيقونات Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- التنسيقات الرئيسية -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="img/favicon.png">
+</head>
+<body>
+  <!-- الشريط العلوي -->
+  <nav class="navbar">
+    <a href="index.html" class="navbar-brand">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent); width:32px; height:32px;">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+      </svg>
+      كوميكس عربية
+    </a>
+    
+    <div class="navbar-links" id="navLinks">
+      <a href="index.html" class="active">الرئيسية</a>
+      <a href="browse.html">تصفح</a>
+      <a href="browse.html?filter=popular">الأكثر قراءة</a>
+      <a href="browse.html?filter=latest">أحدث الإضافات</a>
+    </div>
+    
+    <div class="navbar-actions">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="ابحث عن كوميكس..." 
+               onkeypress="if(event.key==='Enter') UI.doSearch(this.value)">
+        <span class="search-icon"><i class="fas fa-search"></i></span>
+      </div>
+      
+      <button class="theme-toggle" onclick="UI.toggleTheme()" title="تبديل الثيم">
+        <i class="fas fa-sun"></i>
+      </button>
+      
+      <button class="mobile-menu-btn" onclick="UI.toggleMobileMenu()">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </nav>
+
+  <!-- المحتوى الرئيسي -->
+  <main class="main-content">
+    
+    <!-- قسم البطل (Hero) -->
+    <section class="hero">
+      <div class="hero-bg"></div>
+      <div class="hero-content fade-in">
+        <h1>اكتشف عالماً من القصص المصورة</h1>
+        <p>آلاف الكوميكس العربية بجودة عالية، مجاناً وبدون إعلانات. اقرأ الآن وانغمس في المغامرات.</p>
+        <div class="hero-search">
+          <input type="text" id="heroSearch" placeholder="ابحث عن قصة مفضلة..."
+                 onkeypress="if(event.key==='Enter') UI.doSearch(this.value)">
+          <button class="btn btn-primary" onclick="UI.doSearch(document.getElementById('heroSearch').value)">
+            <i class="fas fa-search"></i> بحث
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- أحدث الإصدارات -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">أحدث الإصدارات</h2>
+        <a href="browse.html?filter=latest" class="section-link">
+          عرض الكل <i class="fas fa-arrow-left"></i>
+        </a>
+      </div>
+      <div id="latestComics"></div>
+    </section>
+
+    <!-- الأكثر قراءة -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">الأكثر قراءة</h2>
+        <a href="browse.html?filter=popular" class="section-link">
+          عرض الكل <i class="fas fa-arrow-left"></i>
+        </a>
+      </div>
+      <div id="popularComics"></div>
+    </section>
+
+    <!-- التصنيفات -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">تصفح حسب التصنيف</h2>
+      </div>
+      <div id="categoriesList"></div>
+    </section>
+
+  </main>
+
+  <!-- الفوتر -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h3>كوميكس عربية</h3>
+        <p style="color: var(--text-secondary); line-height: 1.8;">
+          أكبر مكتبة كوميكس عربية مجانية. استمتع بآلاف القصص المصورة بجودة عالية.
+        </p>
+      </div>
+      <div class="footer-section">
+        <h3>روابط سريعة</h3>
+        <a href="index.html">الرئيسية</a>
+        <a href="browse.html">تصفح الكل</a>
+        <a href="browse.html?filter=popular">الأكثر قراءة</a>
+        <a href="browse.html?filter=latest">أحدث الإضافات</a>
+      </div>
+      <div class="footer-section">
+        <h3>التصنيفات</h3>
+        <div id="footerCategories"></div>
+      </div>
+      <div class="footer-section">
+        <h3>لوحة التحكم</h3>
+        <a href="admin/login.html">تسجيل الدخول</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 كوميكس عربية. جميع الحقوق محفوظة.</p>
+    </div>
+  </footer>
+
+  <!-- السكربتات -->
+  <script src="js/db.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    // تحميل البيانات
+    document.addEventListener('DOMContentLoaded', function() {
+      // تحميل أحدث الإصدارات
+      const latest = DB.getLatestComics(8);
+      if (latest.length === 0) {
+        document.getElementById('latestComics').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-book-open"></i></div>
+            <h3>مرحباً بك في كوميكس عربية!</h3>
+            <p>لم يتم إضافة أي كوميكس بعد. ابدأ بإضافة أول كوميكس من <a href="admin/login.html" style="color: var(--accent);">لوحة التحكم</a></p>
+          </div>`;
+      } else {
+        document.getElementById('latestComics').innerHTML = UI.renderComicsGrid(latest);
+      }
+      
+      // تحميل الأكثر قراءة
+      const popular = DB.getMostViewedComics(8);
+      if (popular.length > 0) {
+        document.getElementById('popularComics').innerHTML = UI.renderComicsGrid(popular);
+      } else {
+        document.getElementById('popularComics').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-fire"></i></div>
+            <h3>الأكثر قراءة</h3>
+            <p>ستظهر هنا الأعمال الأكثر مشاهدة بعد إضافة الكوميكس.</p>
+          </div>`;
+      }
+      
+      // تحميل التصنيفات
+      const categories = DB.getCategories();
+      const categoriesContainer = document.getElementById('categoriesList');
+      categoriesContainer.innerHTML = categories.map(cat => {
+        const count = DB.getComicsByCategory(cat.name).length;
+        return `
+          <a href="browse.html?category=${cat.name}" style="
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+          " onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='translateY(-3px)'"
+             onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none'">
+            <i class="fas fa-folder" style="color: var(--accent); font-size: 1.2rem;"></i>
+            <div>
+              <div style="font-weight: 700;">${cat.name}</div>
+              <div style="font-size: 0.8rem; color: var(--text-secondary);">${count} كوميكس</div>
+            </div>
+          </a>
+        `;
+      }).join('');
+
+      // تحميل التصنيفات في الفوتر
+      document.getElementById('footerCategories').innerHTML = 
+        categories.slice(0, 6).map(c => `<a href="browse.html?category=${c.name}">${c.name}</a>`).join('');
+      
+      // تحديث الثيم
+      UI.loadTheme();
+    });
+  </script>
+</body>
+</html>

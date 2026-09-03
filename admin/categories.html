@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة التصنيفات - لوحة التحكم</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="../index.html" class="navbar-brand">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent); width:32px; height:32px;">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+      </svg>
+      لوحة التحكم
+    </a>
+    <div class="navbar-actions">
+      <a href="../index.html" class="btn btn-sm btn-secondary">
+        <i class="fas fa-external-link-alt"></i> زيارة الموقع
+      </a>
+      <button class="btn btn-sm btn-danger" onclick="handleLogout()">
+        <i class="fas fa-sign-out-alt"></i> خروج
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="sidebar-menu">
+          <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> الإحصائيات</a>
+          <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> الكوميكس</a>
+          <a href="chapters.html" class="menu-item"><i class="fas fa-book-open"></i> الفصول</a>
+          <a href="categories.html" class="menu-item active"><i class="fas fa-folder"></i> التصنيفات</a>
+          <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> الإعدادات</a>
+        </div>
+      </aside>
+
+      <div class="admin-main">
+        <h1 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 2rem;">
+          <i class="fas fa-folder" style="color: var(--accent);"></i>
+          إدارة التصنيفات
+        </h1>
+
+        <div id="alertBox"></div>
+
+        <!-- نموذج الإضافة -->
+        <div class="admin-form" style="margin-bottom: 2rem;">
+          <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem;">
+            <i class="fas fa-plus-circle" style="color: var(--accent);"></i>
+            إضافة تصنيف جديد
+          </h3>
+          
+          <form onsubmit="addCategory(event)" style="display: flex; gap: 1rem; align-items: flex-end;">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <label>اسم التصنيف *</label>
+              <input type="text" id="categoryName" placeholder="مثال: فانتازيا" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="height: 44px;">
+              <i class="fas fa-plus"></i> إضافة
+            </button>
+          </form>
+        </div>
+
+        <!-- قائمة التصنيفات -->
+        <div id="categoriesList"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/db.js"></script>
+  <script src="../js/ui.js"></script>
+  <script>
+    if (!DB.isAdmin()) window.location.href = 'login.html';
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadCategories();
+      UI.loadTheme();
+    });
+
+    function loadCategories() {
+      const categories = DB.getCategories();
+      const comics = DB.getComics();
+
+      if (categories.length === 0) {
+        document.getElementById('categoriesList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
+            <h3>لا توجد تصنيفات بعد</h3>
+          </div>`;
+        return;
+      }
+
+      document.getElementById('categoriesList').innerHTML = `
+        <div style="overflow-x: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>الاسم</th>
+                <th>الاسم المختصر</th>
+                <th>عدد الكوميكس</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${categories.map((cat, i) => {
+                const count = comics.filter(c => c.category === cat.name).length;
+                return `
+                  <tr>
+                    <td>${i + 1}</td>
+                    <td><strong>${cat.name}</strong></td>
+                    <td>${cat.slug}</td>
+                    <td>${count} كوميكس</td>
+                    <td>
+                      <div class="actions">
+                        <button class="btn btn-sm btn-danger" onclick="deleteCategory(${cat.id}, '${cat.name}')" title="حذف">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function addCategory(e) {
+      e.preventDefault();
+      const name = document.getElementById('categoryName').value.trim();
+      
+      if (!name) return;
+
+      // التحقق من عدم التكرار
+      const existing = DB.getCategories().find(c => c.name === name);
+      if (existing) {
+        UI.showAlert('هذا التصنيف موجود بالفعل!', 'warning');
+        return;
+      }
+
+      const slug = name.toLowerCase().replace(/\s+/g, '-');
+      DB.addCategory({ name, slug });
+      
+      document.getElementById('categoryName').value = '';
+      UI.showAlert('تم إضافة التصنيف بنجاح!', 'success');
+      loadCategories();
+    }
+
+    function deleteCategory(id, name) {
+      const comics = DB.getComicsByCategory(name);
+      if (comics.length > 0) {
+        UI.showAlert(`لا يمكن حذف التصنيف "${name}" لأنه يحتوي على ${comics.length} كوميكس.`, 'warning');
+        return;
+      }
+      
+      if (confirm(`هل أنت متأكد من حذف التصنيف "${name}"؟`)) {
+        DB.deleteCategory(id);
+        UI.showAlert('تم حذف التصنيف بنجاح.', 'danger');
+        loadCategories();
+      }
+    }
+
+    function handleLogout() {
+      DB.logout();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>

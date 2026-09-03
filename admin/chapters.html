@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة الفصول - لوحة التحكم</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <a href="../index.html" class="navbar-brand">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent); width:32px; height:32px;">
+        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+      </svg>
+      لوحة التحكم
+    </a>
+    <div class="navbar-actions">
+      <a href="../index.html" class="btn btn-sm btn-secondary">
+        <i class="fas fa-external-link-alt"></i> زيارة الموقع
+      </a>
+      <button class="btn btn-sm btn-danger" onclick="handleLogout()">
+        <i class="fas fa-sign-out-alt"></i> خروج
+      </button>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="sidebar-menu">
+          <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> الإحصائيات</a>
+          <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> الكوميكس</a>
+          <a href="chapters.html" class="menu-item active"><i class="fas fa-book-open"></i> الفصول</a>
+          <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> التصنيفات</a>
+          <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> الإعدادات</a>
+        </div>
+      </aside>
+
+      <div class="admin-main">
+        <div class="section-header" style="margin-bottom: 2rem;">
+          <h1 style="font-size: 1.8rem; font-weight: 800;">
+            <i class="fas fa-book-open" style="color: var(--accent);"></i>
+            إدارة الفصول
+          </h1>
+          <button class="btn btn-primary" onclick="showAddForm()">
+            <i class="fas fa-plus"></i> إضافة فصل جديد
+          </button>
+        </div>
+
+        <div id="alertBox"></div>
+
+        <!-- نموذج إضافة/تعديل الفصل -->
+        <div id="chapterForm" class="admin-form" style="display: none; margin-bottom: 2rem;">
+          <h3 id="formTitle" style="margin-bottom: 1.5rem; font-size: 1.2rem;">
+            <i class="fas fa-plus-circle" style="color: var(--accent);"></i>
+            إضافة فصل جديد
+          </h3>
+          
+          <form onsubmit="saveChapter(event)">
+            <input type="hidden" id="editId" value="">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label>الكوميكس *</label>
+                <select id="chapterComic" required></select>
+              </div>
+              
+              <div class="form-group">
+                <label>رقم الفصل *</label>
+                <input type="number" id="chapterNumber" min="1" placeholder="1" required>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label>عنوان الفصل *</label>
+              <input type="text" id="chapterTitle" placeholder="مثال: البداية" required>
+            </div>
+            
+            <div class="form-group">
+              <label>صور الصفحات (اسحب وأفلت أو اختر)</label>
+              <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <p>اسحب صور الصفحات هنا</p>
+                <p><span class="browse-btn">أو اضغط لاختيار الملفات</span></p>
+                <small style="color: var(--text-secondary);">يدعم: JPG, PNG, WEBP - يمكن اختيار عدة ملفات</small>
+              </div>
+              <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" 
+                     onchange="handleFiles(this.files)">
+            </div>
+            
+            <!-- معاينة الصور -->
+            <div class="upload-preview" id="uploadPreview"></div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> حفظ الفصل
+              </button>
+              <button type="button" class="btn btn-secondary" onclick="hideForm()">
+                <i class="fas fa-times"></i> إلغاء
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- اختيار الكوميكس لعرض فصوله -->
+        <div class="form-group" style="max-width: 400px; margin-bottom: 1.5rem;">
+          <label>عرض فصول كوميكس:</label>
+          <select id="filterComic" onchange="loadChapters()">
+            <option value="">جميع الفصول</option>
+          </select>
+        </div>
+
+        <!-- جدول الفصول -->
+        <div id="chaptersTable"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/db.js"></script>
+  <script src="../js/ui.js"></script>
+  <script>
+    if (!DB.isAdmin()) window.location.href = 'login.html';
+
+    let uploadedFiles = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadComicsList();
+      loadChapters();
+      setupDropZone();
+      UI.loadTheme();
+    });
+
+    function loadComicsList() {
+      const comics = DB.getComics();
+      const options = comics.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+      document.getElementById('chapterComic').innerHTML = options;
+      document.getElementById('filterComic').innerHTML = 
+        '<option value="">جميع الفصول</option>' + options;
+    }
+
+    function loadChapters() {
+      const filterId = document.getElementById('filterComic').value;
+      let chapters = filterId ? DB.getChapters(parseInt(filterId)) : (DB.load(DB.KEYS.CHAPTERS) || []);
+      chapters.sort((a, b) => a.comicId - b.comicId || a.number - b.number);
+
+      if (chapters.length === 0) {
+        document.getElementById('chaptersTable').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-book-open"></i></div>
+            <h3>لا توجد فصول بعد</h3>
+          </div>`;
+        return;
+      }
+
+      const comics = DB.getComics();
+      document.getElementById('chaptersTable').innerHTML = `
+        <div style="overflow-x: auto;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>الكوميكس</th>
+                <th>رقم الفصل</th>
+                <th>العنوان</th>
+                <th>عدد الصفحات</th>
+                <th>التاريخ</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${chapters.map(ch => {
+                const comic = comics.find(c => c.id === ch.comicId);
+                return `
+                  <tr>
+                    <td><strong>${comic ? comic.title : 'محذوف'}</strong></td>
+                    <td>${ch.number}</td>
+                    <td>${ch.title}</td>
+                    <td>${ch.images ? ch.images.length : 0} صفحة</td>
+                    <td>${new Date(ch.createdAt).toLocaleDateString('ar-SA')}</td>
+                    <td>
+                      <div class="actions">
+                        <button class="btn btn-sm btn-secondary" onclick="editChapter(${ch.id})" title="تعديل">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteChapter(${ch.id})" title="حذف">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function showAddForm() {
+      document.getElementById('chapterForm').style.display = 'block';
+      document.getElementById('formTitle').innerHTML = '<i class="fas fa-plus-circle" style="color: var(--accent);"></i> إضافة فصل جديد';
+      document.getElementById('editId').value = '';
+      document.getElementById('chapterNumber').value = '';
+      document.getElementById('chapterTitle').value = '';
+      document.getElementById('uploadPreview').innerHTML = '';
+      uploadedFiles = [];
+      document.getElementById('chapterForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function hideForm() {
+      document.getElementById('chapterForm').style.display = 'none';
+    }
+
+    function setupDropZone() {
+      const zone = document.getElementById('dropZone');
+      
+      zone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        zone.classList.add('dragover');
+      });
+      
+      zone.addEventListener('dragleave', () => {
+        zone.classList.remove('dragover');
+      });
+      
+      zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+      });
+    }
+
+    function handleFiles(files) {
+      Array.from(files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            uploadedFiles.push({
+              name: file.name,
+              data: e.target.result
+            });
+            renderPreview();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    function renderPreview() {
+      document.getElementById('uploadPreview').innerHTML = uploadedFiles.map((f, i) => `
+        <div class="preview-item">
+          <img src="${f.data}" alt="${f.name}">
+          <div class="remove-btn" onclick="removeFile(${i})">
+            <i class="fas fa-times"></i>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function removeFile(index) {
+      uploadedFiles.splice(index, 1);
+      renderPreview();
+    }
+
+    function saveChapter(e) {
+      e.preventDefault();
+      const editId = document.getElementById('editId').value;
+      const comicId = parseInt(document.getElementById('chapterComic').value);
+      const number = parseInt(document.getElementById('chapterNumber').value);
+      const title = document.getElementById('chapterTitle').value.trim();
+
+      // استخدام الصور المحملة أو إنشاء صور تجريبية
+      let images = uploadedFiles.map(f => f.data);
+      
+      if (images.length === 0 && !editId) {
+        // صور تجريبية إذا لم يتم رفع صور
+        images = Array.from({length: 5}, (_, i) => 
+          `https://picsum.photos/seed/ch${number}_${i+1}/800/1200`
+        );
+      }
+
+      if (editId) {
+        DB.updateChapter(parseInt(editId), { comicId, number, title, images });
+        showAlert('تم تحديث الفصل بنجاح!', 'success');
+      } else {
+        DB.addChapter({ comicId, number, title, images });
+        showAlert('تم إضافة الفصل بنجاح!', 'success');
+      }
+
+      hideForm();
+      loadChapters();
+    }
+
+    function editChapter(id) {
+      const chapters = DB.load(DB.KEYS.CHAPTERS) || [];
+      const chapter = chapters.find(ch => ch.id === id);
+      if (!chapter) return;
+
+      document.getElementById('editId').value = id;
+      document.getElementById('chapterComic').value = chapter.comicId;
+      document.getElementById('chapterNumber').value = chapter.number;
+      document.getElementById('chapterTitle').value = chapter.title;
+      document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit" style="color: var(--accent);"></i> تعديل الفصل';
+      
+      uploadedFiles = [];
+      document.getElementById('uploadPreview').innerHTML = '';
+      
+      document.getElementById('chapterForm').style.display = 'block';
+      document.getElementById('chapterForm').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function deleteChapter(id) {
+      if (confirm('هل أنت متأكد من حذف هذا الفصل؟')) {
+        DB.deleteChapter(id);
+        showAlert('تم حذف الفصل بنجاح.', 'danger');
+        loadChapters();
+      }
+    }
+
+    function showAlert(message, type) {
+      UI.showAlert(message, type);
+    }
+
+    function handleLogout() {
+      DB.logout();
+      window.location.href = 'login.html';
+    }
+  </script>
+</body>
+</html>
