@@ -213,10 +213,9 @@ const UI = {
 
   // ---------- تبديل الثيم ----------
   toggleTheme() {
-    const settings = DB.load(DB.KEYS.SETTINGS) || {};
-    const newTheme = settings.theme === 'dark' ? 'light' : 'dark';
-    settings.theme = newTheme;
-    DB.save(DB.KEYS.SETTINGS, settings);
+    const current = localStorage.getItem('comicx_theme') || 'dark';
+    const newTheme = current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('comicx_theme', newTheme);
     document.documentElement.setAttribute('data-theme', newTheme);
     // تحديث أيقونة الزر
     const btn = document.querySelector('.theme-toggle');
@@ -227,8 +226,8 @@ const UI = {
 
   // ---------- تحميل الثيم ----------
   loadTheme() {
-    const settings = DB.load(DB.KEYS.SETTINGS) || {};
-    document.documentElement.setAttribute('data-theme', settings.theme || 'dark');
+    const saved = localStorage.getItem('comicx_theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
   },
 
   // ---------- قائمة الموبايل ----------

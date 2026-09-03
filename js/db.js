@@ -7,7 +7,7 @@
 const firebaseConfig = {
   apiKey: "AIzaSyCpJiHhsyLQ8Dngj9gq8jbgDrwqxx41qzc",
   authDomain: "comicx-arabic.firebaseapp.com",
-  databaseURL: "https://comicx-arabic-default-rtdb.firebaseio.com",
+  databaseURL: "https://comicx-arabic-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "comicx-arabic",
   storageBucket: "comicx-arabic.firebasestorage.app",
   messagingSenderId: "199234060570",
