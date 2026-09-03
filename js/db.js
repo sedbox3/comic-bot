@@ -91,12 +91,15 @@ const DB = {
   // ---------- إدارة الكوميكس ----------
   async getComics() {
     const data = await this.getData('comics');
-    return data ? Object.values(data) : [];
+    if (!data) return [];
+    // Firebase يرجع object، نحوله لـ array
+    if (Array.isArray(data)) return data;
+    return Object.values(data);
   },
 
   async getComic(id) {
-    const snapshot = await db.ref('comics/' + id).once('value');
-    return snapshot.val();
+    const comics = await this.getComics();
+    return comics.find(c => c.id === id || c.id === parseInt(id));
   },
 
   async addComic(comic) {
@@ -106,14 +109,14 @@ const DB = {
     comic.views = 0;
     comic.rating = 0;
     comic.ratingCount = 0;
-    comics.unshift(comic);
+    comics.push(comic);
     await this.setData('comics', comics);
     return comic;
   },
 
   async updateComic(id, updates) {
     const comics = await this.getComics();
-    const index = comics.findIndex(c => c.id === id);
+    const index = comics.findIndex(c => c.id === id || c.id === parseInt(id));
     if (index !== -1) {
       comics[index] = { ...comics[index], ...updates };
       await this.setData('comics', comics);
@@ -124,18 +127,23 @@ const DB = {
 
   async deleteComic(id) {
     const comics = await this.getComics();
-    await this.setData('comics', comics.filter(c => c.id !== id));
+    const filtered = comics.filter(c => c.id !== id && c.id !== parseInt(id));
+    await this.setData('comics', filtered);
     // حذف الفصول المرتبطة
     const chapters = await this.getChapters();
-    await this.setData('chapters', chapters.filter(ch => ch.comicId !== id));
+    const filteredChapters = chapters.filter(ch => ch.comicId !== id && ch.comicId !== parseInt(id));
+    await this.setData('chapters', filteredChapters);
   },
 
   // ---------- إدارة الفصول ----------
   async getChapters(comicId) {
     const data = await this.getData('chapters');
-    let chapters = data ? Object.values(data) : [];
+    let chapters = [];
+    if (data) {
+      chapters = Array.isArray(data) ? data : Object.values(data);
+    }
     if (comicId) {
-      chapters = chapters.filter(ch => ch.comicId === comicId);
+      chapters = chapters.filter(ch => ch.comicId === comicId || ch.comicId === parseInt(comicId));
       chapters.sort((a, b) => a.number - b.number);
     }
     return chapters;
@@ -148,33 +156,37 @@ const DB = {
 
   async addChapter(chapter) {
     const chapters = await this.getData('chapters') || [];
+    const chaptersList = Array.isArray(chapters) ? chapters : Object.values(chapters);
     chapter.id = Date.now();
     chapter.createdAt = new Date().toISOString();
-    chapters.push(chapter);
-    await this.setData('chapters', chapters);
+    chaptersList.push(chapter);
+    await this.setData('chapters', chaptersList);
     return chapter;
   },
 
   async updateChapter(id, updates) {
     const chapters = await this.getData('chapters') || [];
-    const index = chapters.findIndex(ch => ch.id === id);
+    const chaptersList = Array.isArray(chapters) ? chapters : Object.values(chapters);
+    const index = chaptersList.findIndex(ch => ch.id === id || ch.id === parseInt(id));
     if (index !== -1) {
-      chapters[index] = { ...chapters[index], ...updates };
-      await this.setData('chapters', chapters);
-      return chapters[index];
+      chaptersList[index] = { ...chaptersList[index], ...updates };
+      await this.setData('chapters', chaptersList);
+      return chaptersList[index];
     }
     return null;
   },
 
   async deleteChapter(id) {
     const chapters = await this.getData('chapters') || [];
-    await this.setData('chapters', chapters.filter(ch => ch.id !== id));
+    const chaptersList = Array.isArray(chapters) ? chapters : Object.values(chapters);
+    await this.setData('chapters', chaptersList.filter(ch => ch.id !== id && ch.id !== parseInt(id)));
   },
 
   // ---------- إدارة التصنيفات ----------
   async getCategories() {
     const data = await this.getData('categories');
-    return data ? (Array.isArray(data) ? data : Object.values(data)) : [];
+    if (!data) return [];
+    return Array.isArray(data) ? data : Object.values(data);
   },
 
   async addCategory(category) {
@@ -187,7 +199,7 @@ const DB = {
 
   async deleteCategory(id) {
     const categories = await this.getCategories();
-    await this.setData('categories', categories.filter(c => c.id !== id));
+    await this.setData('categories', categories.filter(c => c.id !== id && c.id !== parseInt(id)));
   },
 
   // ---------- البحث والفلترة ----------
