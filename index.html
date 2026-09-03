@@ -176,13 +176,13 @@
             <p>لم يتم إضافة أي كوميكس بعد. ابدأ بإضافة أول كوميكس من <a href="admin/login.html" style="color: var(--accent);">لوحة التحكم</a></p>
           </div>`;
       } else {
-        document.getElementById('latestComics').innerHTML = UI.renderComicsGrid(latest);
+        document.getElementById('latestComics').innerHTML = await UI.renderComicsGrid(latest);
       }
       
       // تحميل الأكثر قراءة
       const popular = await DB.getMostViewedComics(8);
       if (popular.length > 0) {
-        document.getElementById('popularComics').innerHTML = UI.renderComicsGrid(popular);
+        document.getElementById('popularComics').innerHTML = await UI.renderComicsGrid(popular);
       } else {
         document.getElementById('popularComics').innerHTML = `
           <div class="empty-state">
