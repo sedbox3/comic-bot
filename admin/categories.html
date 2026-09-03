@@ -143,21 +143,33 @@
       e.preventDefault();
       const name = document.getElementById('categoryName').value.trim();
       
-      if (!name) return;
-
-      // التحقق من عدم التكرار
-      const existing = await DB.getCategories();
-      if (existing.find(c => c.name === name)) {
-        UI.showAlert('هذا التصنيف موجود بالفعل!', 'warning');
+      if (!name) {
+        UI.showAlert('اكتب اسم التصنيف!', 'warning');
         return;
       }
 
-      const slug = name.toLowerCase().replace(/\s+/g, '-');
-      await DB.addCategory({ name, slug });
-      
-      document.getElementById('categoryName').value = '';
-      UI.showAlert('تم إضافة التصنيف بنجاح!', 'success');
-      await loadCategories();
+      try {
+        // التحقق من عدم التكرار
+        const existing = await DB.getCategories();
+        if (existing.find(c => c.name === name)) {
+          UI.showAlert('هذا التصنيف موجود بالفعل!', 'warning');
+          return;
+        }
+
+        const slug = name.toLowerCase().replace(/\s+/g, '-');
+        const result = await DB.addCategory({ name, slug });
+        
+        if (result) {
+          document.getElementById('categoryName').value = '';
+          UI.showAlert('تم إضافة التصنيف بنجاح!', 'success');
+          await loadCategories();
+        } else {
+          UI.showAlert('حدث خطأ أثناء الحفظ!', 'danger');
+        }
+      } catch (error) {
+        console.error('خطأ في إضافة التصنيف:', error);
+        UI.showAlert('حدث خطأ: ' + error.message, 'danger');
+      }
     }
 
     async function deleteCategory(id, name) {

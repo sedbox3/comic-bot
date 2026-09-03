@@ -186,7 +186,8 @@ const DB = {
   async getCategories() {
     const data = await this.getData('categories');
     if (!data) return [];
-    return Array.isArray(data) ? data : Object.values(data);
+    if (Array.isArray(data)) return data;
+    return Object.values(data);
   },
 
   async addCategory(category) {
@@ -194,12 +195,15 @@ const DB = {
     category.id = Date.now();
     categories.push(category);
     await this.setData('categories', categories);
-    return category;
+    // التحقق من الحفظ
+    const saved = await this.getCategories();
+    return saved.find(c => c.id === category.id);
   },
 
   async deleteCategory(id) {
     const categories = await this.getCategories();
-    await this.setData('categories', categories.filter(c => c.id !== id && c.id !== parseInt(id)));
+    const filtered = categories.filter(c => c.id !== id && c.id !== parseInt(id));
+    await this.setData('categories', filtered);
   },
 
   // ---------- البحث والفلترة ----------
