@@ -21,52 +21,45 @@ const db = firebase.database();
 const DB = {
   // ---------- تهيئة قاعدة البيانات ----------
   async init() {
-    // إنشاء التصنيفات الافتراضية إذا لم تكن موجودة
-    const categoriesSnap = await db.ref('categories').once('value');
-    if (!categoriesSnap.exists()) {
-      await db.ref('categories').set([
-        { id: 1, name: 'أكشن', slug: 'action' },
-        { id: 2, name: 'مغامرة', slug: 'adventure' },
-        { id: 3, name: 'خيال علمي', slug: 'sci-fi' },
-        { id: 4, name: 'رعب', slug: 'horror' },
-        { id: 5, name: 'كوميدي', slug: 'comedy' },
-        { id: 6, name: 'رومانسي', slug: 'romance' },
-        { id: 7, name: 'دراما', slug: 'drama' },
-        { id: 8, name: 'رياضة', slug: 'sports' },
-        { id: 9, name: 'تاريخي', slug: 'historical' },
-        { id: 10, name: 'أخرى', slug: 'other' }
-      ]);
-    }
+    try {
+      // التحقق من وجود التصنيفات
+      const catSnap = await db.ref('categories').once('value');
+      if (!catSnap.exists()) {
+        await db.ref('categories').set({
+          cat_1: { id: 1, name: 'أكشن', slug: 'action' },
+          cat_2: { id: 2, name: 'مغامرة', slug: 'adventure' },
+          cat_3: { id: 3, name: 'خيال علمي', slug: 'sci-fi' },
+          cat_4: { id: 4, name: 'رعب', slug: 'horror' },
+          cat_5: { id: 5, name: 'كوميدي', slug: 'comedy' },
+          cat_6: { id: 6, name: 'رومانسي', slug: 'romance' },
+          cat_7: { id: 7, name: 'دراما', slug: 'drama' },
+          cat_8: { id: 8, name: 'رياضة', slug: 'sports' },
+          cat_9: { id: 9, name: 'تاريخي', slug: 'historical' },
+          cat_10: { id: 10, name: 'أخرى', slug: 'other' }
+        });
+      }
 
-    // بيانات الأدمن الافتراضية
-    const adminSnap = await db.ref('admin').once('value');
-    if (!adminSnap.exists()) {
-      await db.ref('admin').set({
-        username: 'admin',
-        password: btoa('admin123')
-      });
-    }
+      // التحقق من وجود الأدمن
+      const adminSnap = await db.ref('admin').once('value');
+      if (!adminSnap.exists()) {
+        await db.ref('admin').set({
+          username: 'admin',
+          password: btoa('admin123')
+        });
+      }
 
-    // إعدادات الافتراضية
-    const settingsSnap = await db.ref('settings').once('value');
-    if (!settingsSnap.exists()) {
-      await db.ref('settings').set({
-        siteName: 'كوميكس عربية',
-        siteDescription: 'أكبر مكتبة كوميكس عربية',
-        theme: 'dark',
-        itemsPerPage: 20
-      });
-    }
-
-    // إنشاء مصفوفات فارغة إذا لم تكن موجودة
-    const comicsSnap = await db.ref('comics').once('value');
-    if (!comicsSnap.exists()) {
-      await db.ref('comics').set([]);
-    }
-
-    const chaptersSnap = await db.ref('chapters').once('value');
-    if (!chaptersSnap.exists()) {
-      await db.ref('chapters').set([]);
+      // التحقق من وجود الإعدادات
+      const settingsSnap = await db.ref('settings').once('value');
+      if (!settingsSnap.exists()) {
+        await db.ref('settings').set({
+          siteName: 'كوميكس عربية',
+          siteDescription: 'أكبر مكتبة كوميكس عربية',
+          theme: 'dark',
+          itemsPerPage: 20
+        });
+      }
+    } catch (error) {
+      console.error('خطأ في التهيئة:', error);
     }
   },
 
@@ -76,23 +69,10 @@ const DB = {
     return snapshot.val();
   },
 
-  async setData(path, data) {
-    await db.ref(path).set(data);
-  },
-
-  async updateData(path, data) {
-    await db.ref(path).update(data);
-  },
-
-  async removeData(path) {
-    await db.ref(path).remove();
-  },
-
   // ---------- إدارة الكوميكس ----------
   async getComics() {
     const data = await this.getData('comics');
     if (!data) return [];
-    // Firebase يرجع object، نحوله لـ array
     if (Array.isArray(data)) return data;
     return Object.values(data);
   },
@@ -103,45 +83,50 @@ const DB = {
   },
 
   async addComic(comic) {
-    const comics = await this.getComics();
+    const newRef = db.ref('comics').push();
     comic.id = Date.now();
+    comic.fbKey = newRef.key;
     comic.createdAt = new Date().toISOString();
     comic.views = 0;
     comic.rating = 0;
     comic.ratingCount = 0;
-    comics.push(comic);
-    await this.setData('comics', comics);
+    await newRef.set(comic);
     return comic;
   },
 
   async updateComic(id, updates) {
     const comics = await this.getComics();
-    const index = comics.findIndex(c => c.id === id || c.id === parseInt(id));
-    if (index !== -1) {
-      comics[index] = { ...comics[index], ...updates };
-      await this.setData('comics', comics);
-      return comics[index];
+    const comic = comics.find(c => c.id === id || c.id === parseInt(id));
+    if (comic && comic.fbKey) {
+      await db.ref('comics/' + comic.fbKey).update(updates);
+      return { ...comic, ...updates };
     }
     return null;
   },
 
   async deleteComic(id) {
     const comics = await this.getComics();
-    const filtered = comics.filter(c => c.id !== id && c.id !== parseInt(id));
-    await this.setData('comics', filtered);
+    const comic = comics.find(c => c.id === id || c.id === parseInt(id));
+    if (comic && comic.fbKey) {
+      await db.ref('comics/' + comic.fbKey).remove();
+    }
     // حذف الفصول المرتبطة
-    const chapters = await this.getChapters();
-    const filteredChapters = chapters.filter(ch => ch.comicId !== id && ch.comicId !== parseInt(id));
-    await this.setData('chapters', filteredChapters);
+    const chaptersSnap = await db.ref('chapters').once('value');
+    const chaptersData = chaptersSnap.val();
+    if (chaptersData) {
+      Object.entries(chaptersData).forEach(async ([key, ch]) => {
+        if (ch.comicId === id || ch.comicId === parseInt(id)) {
+          await db.ref('chapters/' + key).remove();
+        }
+      });
+    }
   },
 
   // ---------- إدارة الفصول ----------
   async getChapters(comicId) {
     const data = await this.getData('chapters');
-    let chapters = [];
-    if (data) {
-      chapters = Array.isArray(data) ? data : Object.values(data);
-    }
+    if (!data) return [];
+    let chapters = Array.isArray(data) ? data : Object.values(data);
     if (comicId) {
       chapters = chapters.filter(ch => ch.comicId === comicId || ch.comicId === parseInt(comicId));
       chapters.sort((a, b) => a.number - b.number);
@@ -149,37 +134,37 @@ const DB = {
     return chapters;
   },
 
-  async getChapter(comicId, chapterNumber) {
-    const chapters = await this.getChapters(comicId);
-    return chapters.find(ch => ch.number === chapterNumber);
-  },
-
   async addChapter(chapter) {
-    const chapters = await this.getData('chapters') || [];
-    const chaptersList = Array.isArray(chapters) ? chapters : Object.values(chapters);
+    const newRef = db.ref('chapters').push();
     chapter.id = Date.now();
+    chapter.fbKey = newRef.key;
     chapter.createdAt = new Date().toISOString();
-    chaptersList.push(chapter);
-    await this.setData('chapters', chaptersList);
+    await newRef.set(chapter);
     return chapter;
   },
 
   async updateChapter(id, updates) {
-    const chapters = await this.getData('chapters') || [];
-    const chaptersList = Array.isArray(chapters) ? chapters : Object.values(chapters);
-    const index = chaptersList.findIndex(ch => ch.id === id || ch.id === parseInt(id));
-    if (index !== -1) {
-      chaptersList[index] = { ...chaptersList[index], ...updates };
-      await this.setData('chapters', chaptersList);
-      return chaptersList[index];
+    const data = await this.getData('chapters');
+    if (!data) return null;
+    const entries = Object.entries(data);
+    for (const [key, ch] of entries) {
+      if (ch.id === id || ch.id === parseInt(id)) {
+        await db.ref('chapters/' + key).update(updates);
+        return { ...ch, ...updates };
+      }
     }
     return null;
   },
 
   async deleteChapter(id) {
-    const chapters = await this.getData('chapters') || [];
-    const chaptersList = Array.isArray(chapters) ? chapters : Object.values(chapters);
-    await this.setData('chapters', chaptersList.filter(ch => ch.id !== id && ch.id !== parseInt(id)));
+    const data = await this.getData('chapters');
+    if (!data) return;
+    const entries = Object.entries(data);
+    for (const [key, ch] of entries) {
+      if (ch.id === id || ch.id === parseInt(id)) {
+        await db.ref('chapters/' + key).remove();
+      }
+    }
   },
 
   // ---------- إدارة التصنيفات ----------
@@ -191,19 +176,22 @@ const DB = {
   },
 
   async addCategory(category) {
-    const categories = await this.getCategories();
+    const newRef = db.ref('categories').push();
     category.id = Date.now();
-    categories.push(category);
-    await this.setData('categories', categories);
-    // التحقق من الحفظ
-    const saved = await this.getCategories();
-    return saved.find(c => c.id === category.id);
+    category.fbKey = newRef.key;
+    await newRef.set(category);
+    return category;
   },
 
   async deleteCategory(id) {
-    const categories = await this.getCategories();
-    const filtered = categories.filter(c => c.id !== id && c.id !== parseInt(id));
-    await this.setData('categories', filtered);
+    const data = await this.getData('categories');
+    if (!data) return;
+    const entries = Object.entries(data);
+    for (const [key, cat] of entries) {
+      if (cat.id === id || cat.id === parseInt(id)) {
+        await db.ref('categories/' + key).remove();
+      }
+    }
   },
 
   // ---------- البحث والفلترة ----------
@@ -239,19 +227,18 @@ const DB = {
   // ---------- المشاهدات ----------
   async incrementViews(comicId) {
     const comic = await this.getComic(comicId);
-    if (comic) {
-      await this.updateComic(comicId, { views: (comic.views || 0) + 1 });
+    if (comic && comic.fbKey) {
+      await db.ref('comics/' + comic.fbKey + '/views').set((comic.views || 0) + 1);
     }
   },
 
   // ---------- التقييم ----------
   async rateComic(comicId, rating) {
     const comic = await this.getComic(comicId);
-    if (!comic) return;
-
+    if (!comic || !comic.fbKey) return;
     const totalRating = (comic.rating || 0) * (comic.ratingCount || 0) + rating;
     const newCount = (comic.ratingCount || 0) + 1;
-    await this.updateComic(comicId, {
+    await db.ref('comics/' + comic.fbKey).update({
       rating: totalRating / newCount,
       ratingCount: newCount
     });
@@ -260,12 +247,11 @@ const DB = {
   // ---------- الإحصائيات ----------
   async getStats() {
     const comics = await this.getComics();
-    const chapters = await this.getData('chapters') || [];
-    const chaptersList = Array.isArray(chapters) ? chapters : Object.values(chapters);
+    const chapters = await this.getChapters();
     const totalViews = comics.reduce((sum, c) => sum + (c.views || 0), 0);
     return {
       totalComics: comics.length,
-      totalChapters: chaptersList.length,
+      totalChapters: chapters.length,
       totalViews: totalViews,
       publishedComics: comics.filter(c => c.status === 'published').length,
       draftComics: comics.filter(c => c.status === 'draft').length
@@ -279,7 +265,7 @@ const DB = {
   },
 
   async saveSettings(settings) {
-    await this.setData('settings', settings);
+    await db.ref('settings').set(settings);
   },
 
   // ---------- تسجيل الدخول ----------
@@ -305,7 +291,7 @@ const DB = {
     if (admin.password !== btoa(currentPass)) {
       return { success: false, message: 'كلمة المرور الحالية غير صحيحة' };
     }
-    await this.updateData('admin', { password: btoa(newPass) });
+    await db.ref('admin/password').set(btoa(newPass));
     return { success: true, message: 'تم تغيير كلمة المرور بنجاح' };
   }
 };
