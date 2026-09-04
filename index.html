@@ -39,56 +39,26 @@
     ::-webkit-scrollbar { width: 8px; }
     ::-webkit-scrollbar-track { background: #1a1a24; }
     ::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 4px; }
-    
     .swiper-slide { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
     .swiper-slide-active { transform: scale(1.05); z-index: 10; }
-    
     .comic-card { transition: all 0.3s ease; }
     .comic-card:hover { transform: translateY(-8px); }
     .comic-card:hover .cover-img { transform: scale(1.1); }
     .cover-img { transition: transform 0.5s ease; }
-    
-    .rank-badge { 
-      background: linear-gradient(135deg, #7c3aed, #6d28d9);
-      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
-    }
-    
+    .card-shine { background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.03) 100%); }
+    .glass { background: rgba(26, 26, 36, 0.8); backdrop-filter: blur(12px); }
+    .tab-active { background: #7c3aed; color: white; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); }
     .update-item:hover { background: rgba(124, 58, 237, 0.1); }
+    .category-chip { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #1a1a24; border: 2px solid #22222e; border-radius: 9999px; color: #9ca3af; font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    .category-chip:hover, .category-chip.active { background: #7c3aed; color: white; border-color: #7c3aed; }
+    .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     
-    .tab-active { 
-      background: #7c3aed; 
-      color: white;
-      box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
-    }
-    
-    .glass { 
-      background: rgba(26, 26, 36, 0.8); 
-      backdrop-filter: blur(12px);
-    }
-    
-    .glow { box-shadow: 0 0 40px rgba(124, 58, 237, 0.3); }
-    
-    .hero-gradient {
-      background: linear-gradient(135deg, #0f0f13 0%, #1a1025 50%, #0f0f13 100%);
-    }
-    
-    .card-shine {
-      background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.03) 100%);
-    }
-    
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-    
-    .float-anim { animation: float 3s ease-in-out infinite; }
-    
-    @keyframes pulse-glow {
-      0%, 100% { box-shadow: 0 0 20px rgba(124, 58, 237, 0.3); }
-      50% { box-shadow: 0 0 40px rgba(124, 58, 237, 0.6); }
-    }
-    
-    .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+    /* Language Switcher */
+    .lang-dropdown { position: absolute; top: 100%; right: 0; min-width: 180px; background: #1a1a24; border: 2px solid #22222e; border-radius: 12px; padding: 0.5rem; z-index: 100; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+    .lang-option { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0.75rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; color: #9ca3af; }
+    .lang-option:hover { background: rgba(124, 58, 237, 0.1); color: white; }
+    .lang-option.active { background: #7c3aed; color: white; }
   </style>
 </head>
 <body class="bg-dark-900 text-white font-sans min-h-screen">
@@ -102,23 +72,21 @@
         <div class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/30">
           <i class="fas fa-book-open text-white text-lg"></i>
         </div>
-        <span class="text-xl font-bold hidden sm:block">
-          Sed<span class="text-accent">box</span>
-        </span>
+        <span class="text-xl font-bold hidden sm:block">Sed<span class="text-accent">box</span></span>
       </a>
 
       <!-- Nav Links -->
       <div class="hidden md:flex items-center gap-1">
-        <a href="index.html" class="px-4 py-2 rounded-lg bg-accent/10 text-accent font-medium text-sm">Home</a>
-        <a href="browse.html" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm">Browse</a>
-        <a href="browse.html?filter=popular" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm">Trending</a>
-        <a href="browse.html?filter=latest" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm">Latest</a>
+        <a href="index.html" class="px-4 py-2 rounded-lg bg-accent/10 text-accent font-medium text-sm" data-i18n="home">الرئيسية</a>
+        <a href="browse.html" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm" data-i18n="browse">تصفح</a>
+        <a href="browse.html?filter=popular" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm" data-i18n="trending">الأكثر قراءة</a>
+        <a href="browse.html?filter=latest" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm" data-i18n="latest">أحدث الإضافات</a>
       </div>
 
       <!-- Search -->
       <div class="flex-1 max-w-md hidden sm:block">
         <div class="relative">
-          <input type="text" id="searchInput" placeholder="Search comics... (Ctrl+K)" 
+          <input type="text" id="searchInput" data-i18n-placeholder="searchCtrlK" placeholder="ابحث... (Ctrl+K)" 
                  class="w-full bg-dark-700 border border-dark-500 rounded-full px-4 py-2 pl-10 pr-20 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-accent transition"
                  onkeypress="if(event.key==='Enter') doSearch(this.value)">
           <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
@@ -128,12 +96,17 @@
 
       <!-- Actions -->
       <div class="flex items-center gap-2">
-        <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-dark-700 border border-dark-500 flex items-center justify-center text-gray-400 hover:text-golden transition">
-          <i class="fas fa-star"></i>
-        </button>
+        <!-- Language Switcher -->
+        <div class="relative" id="langSwitcher">
+          <button onclick="toggleLangDropdown()" class="w-10 h-10 rounded-full bg-dark-700 border border-dark-500 flex items-center justify-center text-lg hover:border-accent transition" id="currentLangBtn">
+            🌐
+          </button>
+          <div id="langDropdown" class="lang-dropdown hidden"></div>
+        </div>
+        
         <a href="admin/login.html" class="hidden sm:flex items-center gap-2 bg-accent hover:bg-accent-dark text-white px-4 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-accent/30">
           <i class="fas fa-user"></i>
-          <span>Sign Up</span>
+          <span data-i18n="signUp">تسجيل</span>
         </a>
         <button onclick="toggleMobileMenu()" class="md:hidden w-10 h-10 rounded-lg bg-dark-700 flex items-center justify-center text-gray-400">
           <i class="fas fa-bars"></i>
@@ -144,19 +117,16 @@
     <!-- Mobile Menu -->
     <div id="mobileMenu" class="hidden md:hidden border-t border-dark-600 bg-dark-800">
       <div class="p-4 space-y-2">
-        <a href="index.html" class="block px-4 py-3 rounded-lg bg-accent/10 text-accent font-medium">Home</a>
-        <a href="browse.html" class="block px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-600">Browse</a>
-        <a href="browse.html?filter=popular" class="block px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-600">Trending</a>
-        <a href="browse.html?filter=latest" class="block px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-600">Latest</a>
-        <div class="pt-2">
-          <input type="text" placeholder="Search..." class="w-full bg-dark-700 border border-dark-500 rounded-lg px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-accent">
-        </div>
+        <a href="index.html" class="block px-4 py-3 rounded-lg bg-accent/10 text-accent font-medium" data-i18n="home">الرئيسية</a>
+        <a href="browse.html" class="block px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-600" data-i18n="browse">تصفح</a>
+        <a href="browse.html?filter=popular" class="block px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-600" data-i18n="trending">الأكثر قراءة</a>
+        <a href="browse.html?filter=latest" class="block px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-600" data-i18n="latest">أحدث الإضافات</a>
       </div>
     </div>
   </nav>
 
   <!-- Hero Slider -->
-  <section class="pt-20 pb-8 hero-gradient">
+  <section class="pt-20 pb-8" style="background: linear-gradient(135deg, #0f0f13 0%, #1a1025 50%, #0f0f13 100%);">
     <div class="max-w-7xl mx-auto px-4">
       <div class="swiper hero-swiper py-8">
         <div class="swiper-wrapper" id="heroSlider"></div>
@@ -168,9 +138,9 @@
   <main class="max-w-7xl mx-auto px-4 py-8">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-      <!-- Left Column - Primary (70%) -->
+      <!-- Left Column -->
       <div class="lg:col-span-8 space-y-12">
-
+        
         <!-- Trending Comics -->
         <section>
           <div class="flex items-center justify-between mb-6">
@@ -178,11 +148,9 @@
               <span class="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
                 <i class="fas fa-fire text-accent"></i>
               </span>
-              Trending Comics
+              <span data-i18n="trendingComics">كوميكس رائجة</span>
             </h2>
-            <a href="browse.html?filter=popular" class="text-accent hover:text-accent-light text-sm font-medium flex items-center gap-1 transition">
-              View All <i class="fas fa-arrow-left text-xs"></i>
-            </a>
+            <a href="browse.html?filter=popular" class="text-accent hover:text-accent-light text-sm font-medium flex items-center gap-1 transition" data-i18n="viewAll">عرض الكل <i class="fas fa-arrow-left text-xs"></i></a>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="trendingComics"></div>
         </section>
@@ -194,12 +162,10 @@
               <span class="w-10 h-10 bg-golden/20 rounded-lg flex items-center justify-center">
                 <i class="fas fa-book-open text-golden"></i>
               </span>
-              Trending Novels
+              <span data-i18n="trendingNovels">روايات رائجة</span>
               <span class="text-xs bg-golden/20 text-golden px-2 py-0.5 rounded-full font-medium">Beta</span>
             </h2>
-            <a href="browse.html" class="text-accent hover:text-accent-light text-sm font-medium flex items-center gap-1 transition">
-              View All <i class="fas fa-arrow-left text-xs"></i>
-            </a>
+            <a href="browse.html" class="text-accent hover:text-accent-light text-sm font-medium flex items-center gap-1 transition" data-i18n="viewAll">عرض الكل <i class="fas fa-arrow-left text-xs"></i></a>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="trendingNovels"></div>
         </section>
@@ -211,32 +177,24 @@
               <span class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
                 <i class="fas fa-clock text-green-500"></i>
               </span>
-              Latest Updates
+              <span data-i18n="latestUpdates">آخر التحديثات</span>
             </h2>
-            <a href="browse.html?filter=latest" class="text-accent hover:text-accent-light text-sm font-medium flex items-center gap-1 transition">
-              View All <i class="fas fa-arrow-left text-xs"></i>
-            </a>
+            <a href="browse.html?filter=latest" class="text-accent hover:text-accent-light text-sm font-medium flex items-center gap-1 transition" data-i18n="viewAll">عرض الكل <i class="fas fa-arrow-left text-xs"></i></a>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="latestUpdates"></div>
         </section>
-
       </div>
 
-      <!-- Right Column - Sidebar (30%) -->
+      <!-- Right Column - Sidebar -->
       <aside class="lg:col-span-4 space-y-8">
-
-        <!-- Popular / Top Ranking -->
+        
+        <!-- Popular -->
         <div class="bg-dark-700 rounded-2xl border border-dark-500 overflow-hidden">
           <div class="p-4 border-b border-dark-500">
             <h3 class="text-lg font-bold flex items-center gap-2">
               <i class="fas fa-crown text-golden"></i>
-              Popular
+              <span data-i18n="trending">الأكثر قراءة</span>
             </h3>
-            <div class="flex gap-2 mt-3">
-              <button onclick="filterRanking('weekly')" id="tabWeekly" class="flex-1 py-2 rounded-lg text-sm font-medium tab-active transition">Weekly</button>
-              <button onclick="filterRanking('monthly')" id="tabMonthly" class="flex-1 py-2 rounded-lg text-sm font-medium bg-dark-600 text-gray-400 hover:text-white transition">Monthly</button>
-              <button onclick="filterRanking('all')" id="tabAll" class="flex-1 py-2 rounded-lg text-sm font-medium bg-dark-600 text-gray-400 hover:text-white transition">All Time</button>
-            </div>
           </div>
           <div class="divide-y divide-dark-500" id="rankingList"></div>
         </div>
@@ -249,25 +207,19 @@
             <span class="text-xs bg-accent px-2 py-1 rounded-full font-medium">Editor's Pick</span>
             <h3 class="text-xl font-bold mt-2 mb-1" id="pickTitle"></h3>
             <p class="text-gray-400 text-sm line-clamp-2" id="pickDesc"></p>
-            <div class="flex items-center gap-2 mt-3 text-sm text-gray-400">
-              <span><i class="fas fa-eye"></i> <span id="pickViews">0</span></span>
-              <span>•</span>
-              <span><i class="fas fa-book"></i> <span id="pickChapters">0</span> chapters</span>
-            </div>
           </div>
         </div>
 
         <!-- Quick Links -->
         <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6">
-          <h3 class="text-lg font-bold mb-4">Quick Links</h3>
+          <h3 class="text-lg font-bold mb-4" data-i18n="quickActions">إجراءات سريعة</h3>
           <div class="space-y-2">
             <a href="browse.html?filter=popular" class="flex items-center gap-3 p-3 rounded-xl hover:bg-dark-600 transition group">
               <div class="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center group-hover:bg-accent/30 transition">
                 <i class="fas fa-fire text-accent"></i>
               </div>
               <div>
-                <div class="font-medium text-sm">Most Popular</div>
-                <div class="text-gray-500 text-xs">Top rated comics</div>
+                <div class="font-medium text-sm" data-i18n="trendingComics">كوميكس رائجة</div>
               </div>
             </a>
             <a href="browse.html?filter=latest" class="flex items-center gap-3 p-3 rounded-xl hover:bg-dark-600 transition group">
@@ -275,8 +227,7 @@
                 <i class="fas fa-clock text-green-500"></i>
               </div>
               <div>
-                <div class="font-medium text-sm">New Releases</div>
-                <div class="text-gray-500 text-xs">Latest updates</div>
+                <div class="font-medium text-sm" data-i18n="latestUpdates">آخر التحديثات</div>
               </div>
             </a>
             <a href="browse.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-dark-600 transition group">
@@ -284,13 +235,11 @@
                 <i class="fas fa-th-large text-golden"></i>
               </div>
               <div>
-                <div class="font-medium text-sm">Browse All</div>
-                <div class="text-gray-500 text-xs">Full library</div>
+                <div class="font-medium text-sm" data-i18n="browse">تصفح</div>
               </div>
             </a>
           </div>
         </div>
-
       </aside>
     </div>
   </main>
@@ -306,37 +255,78 @@
             </div>
             <span class="text-xl font-bold">Sed<span class="text-accent">box</span></span>
           </div>
-          <p class="text-gray-500 text-sm leading-relaxed">The best platform for reading manga and comics online for free.</p>
+          <p class="text-gray-500 text-sm leading-relaxed" data-i18n="footerDesc">أكبر مكتبة كوميكس عربية مجانية</p>
         </div>
         <div>
-          <h4 class="font-bold mb-4">Navigation</h4>
+          <h4 class="font-bold mb-4" data-i18n="navigation">التنقل</h4>
           <div class="space-y-2 text-sm">
-            <a href="index.html" class="block text-gray-400 hover:text-accent transition">Home</a>
-            <a href="browse.html" class="block text-gray-400 hover:text-accent transition">Browse</a>
-            <a href="browse.html?filter=popular" class="block text-gray-400 hover:text-accent transition">Trending</a>
-            <a href="browse.html?filter=latest" class="block text-gray-400 hover:text-accent transition">Latest</a>
+            <a href="index.html" class="block text-gray-400 hover:text-accent transition" data-i18n="home">الرئيسية</a>
+            <a href="browse.html" class="block text-gray-400 hover:text-accent transition" data-i18n="browse">تصفح</a>
+            <a href="browse.html?filter=popular" class="block text-gray-400 hover:text-accent transition" data-i18n="trending">الأكثر قراءة</a>
+            <a href="browse.html?filter=latest" class="block text-gray-400 hover:text-accent transition" data-i18n="latest">أحدث الإضافات</a>
           </div>
         </div>
         <div>
-          <h4 class="font-bold mb-4">Genres</h4>
+          <h4 class="font-bold mb-4" data-i18n="genres">التصنيفات</h4>
           <div class="space-y-2 text-sm" id="footerGenres"></div>
         </div>
         <div>
-          <h4 class="font-bold mb-4">Admin</h4>
+          <h4 class="font-bold mb-4" data-i18n="admin">الإدارة</h4>
           <div class="space-y-2 text-sm">
-            <a href="admin/login.html" class="block text-gray-400 hover:text-accent transition">Dashboard</a>
-            <a href="admin/comics.html" class="block text-gray-400 hover:text-accent transition">Manage Comics</a>
+            <a href="admin/login.html" class="block text-gray-400 hover:text-accent transition" data-i18n="dashboard">لوحة التحكم</a>
           </div>
         </div>
       </div>
       <div class="border-t border-dark-600 mt-8 pt-8 text-center text-gray-500 text-sm">
-        © 2026 Sedbox Comics. All rights reserved.
+        © 2026 Sedbox Comics. <span data-i18n="allRights">جميع الحقوق محفوظة</span>.
       </div>
     </div>
   </footer>
 
+  <script src="js/i18n.js"></script>
   <script src="js/db.js"></script>
   <script>
+    // Language Switcher
+    let langDropdownOpen = false;
+    
+    function toggleLangDropdown() {
+      langDropdownOpen = !langDropdownOpen;
+      document.getElementById('langDropdown').classList.toggle('hidden', !langDropdownOpen);
+      if (langDropdownOpen) renderLangDropdown();
+    }
+    
+    function renderLangDropdown() {
+      const dropdown = document.getElementById('langDropdown');
+      const languages = I18N.supported;
+      
+      dropdown.innerHTML = languages.map(lang => `
+        <div class="lang-option ${lang === I18N.current ? 'active' : ''}" onclick="changeLang('${lang}')">
+          <span class="text-lg">${I18N.getFlag(lang)}</span>
+          <span class="text-sm">${I18N.getLanguageName(lang)}</span>
+        </div>
+      `).join('');
+    }
+    
+    function changeLang(lang) {
+      I18N.changeLanguage(lang);
+      document.getElementById('currentLangBtn').textContent = I18N.getFlag(lang);
+      toggleLangDropdown();
+      location.reload();
+    }
+    
+    // Initialize language
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('currentLangBtn').textContent = I18N.getFlag(I18N.current);
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#langSwitcher')) {
+        document.getElementById('langDropdown').classList.add('hidden');
+        langDropdownOpen = false;
+      }
+    });
+    
     // Hero Slider
     function initHeroSlider(comics) {
       const slider = document.getElementById('heroSlider');
@@ -382,9 +372,7 @@
           <div class="relative aspect-[3/4] overflow-hidden">
             <img src="${comic.cover}" alt="${comic.title}" class="cover-img w-full h-full object-cover">
             <div class="absolute inset-0 card-shine"></div>
-            <div class="absolute top-2 right-2 bg-accent/90 backdrop-blur px-2 py-0.5 rounded-md text-xs font-bold">
-              ${comic.category || 'Manga'}
-            </div>
+            <div class="absolute top-2 right-2 bg-accent/90 backdrop-blur px-2 py-0.5 rounded-md text-xs font-bold">${comic.category || 'Manga'}</div>
             <div class="absolute top-2 left-2 bg-black/70 backdrop-blur px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1">
               <i class="fas fa-star text-golden text-[10px]"></i> ${(comic.rating || 0).toFixed(1)}
             </div>
@@ -405,9 +393,7 @@
       
       return `
         <a href="comic.html?id=${comic.id}" class="flex items-center gap-3 p-3 hover:bg-dark-600 transition group">
-          <div class="w-8 h-8 rounded-lg ${badgeClass} flex items-center justify-center text-sm font-bold flex-shrink-0">
-            ${rank}
-          </div>
+          <div class="w-8 h-8 rounded-lg ${badgeClass} flex items-center justify-center text-sm font-bold flex-shrink-0">${rank}</div>
           <img src="${comic.cover}" alt="${comic.title}" class="w-12 h-16 object-cover rounded-lg flex-shrink-0">
           <div class="flex-1 min-w-0">
             <h4 class="font-medium text-sm line-clamp-1 group-hover:text-accent transition">${comic.title}</h4>
@@ -432,7 +418,6 @@
                 <div class="flex items-center gap-2 text-xs">
                   <span class="bg-accent/20 text-accent px-2 py-0.5 rounded font-medium">Ch. ${ch.number || i + 1}</span>
                   <span class="text-gray-500">${ch.title}</span>
-                  <span class="text-gray-600 mr-auto">${getTimeAgo(ch.timestamp)}</span>
                 </div>
               `).join('')}
             </div>
@@ -440,23 +425,10 @@
         </a>`;
     }
 
-    // Helpers
     function formatNumber(num) {
       if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
       if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
       return num.toString();
-    }
-
-    function getTimeAgo(timestamp) {
-      if (!timestamp) return '';
-      const diff = Date.now() - timestamp;
-      const minutes = Math.floor(diff / 60000);
-      const hours = Math.floor(diff / 3600000);
-      const days = Math.floor(diff / 86400000);
-      if (minutes < 60) return `${minutes}m ago`;
-      if (hours < 24) return `${hours}h ago`;
-      if (days < 7) return `${days}d ago`;
-      return `${Math.floor(days / 7)}w ago`;
     }
 
     function toggleMobileMenu() {
@@ -467,7 +439,6 @@
       if (val.trim()) window.location.href = `browse.html?search=${encodeURIComponent(val.trim())}`;
     }
 
-    // Ctrl+K
     document.addEventListener('keydown', e => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
@@ -481,18 +452,14 @@
       
       const allComics = await DB.getLatestComics(50);
       
-      // Hero
       initHeroSlider(allComics);
       
-      // Trending
       const trending = await DB.getMostViewedComics(8);
       document.getElementById('trendingComics').innerHTML = trending.map(renderComicCard).join('') ||
-        '<p class="text-gray-500 col-span-full text-center py-8">No comics yet. Add from <a href="admin/login.html" class="text-accent">dashboard</a></p>';
+        `<p class="col-span-full text-center py-8 text-gray-500">${I18N.t('noComics')}</p>`;
       
-      // Novels (placeholder)
       document.getElementById('trendingNovels').innerHTML = trending.slice(0, 4).map(c => renderComicCard({...c, category: 'Novel'})).join('');
       
-      // Latest
       const latest = allComics.slice(0, 6);
       const latestHtml = [];
       for (const comic of latest) {
@@ -501,39 +468,25 @@
         latestHtml.push(renderUpdateItem(comic, chapters.slice(0, 3)));
       }
       document.getElementById('latestUpdates').innerHTML = latestHtml.join('') || 
-        '<p class="text-gray-500 col-span-full text-center py-8">No updates yet</p>';
+        `<p class="col-span-full text-center py-8 text-gray-500">${I18N.t('noUpdates')}</p>`;
       
-      // Ranking
       const popular = await DB.getMostViewedComics(10);
       document.getElementById('rankingList').innerHTML = popular.map((c, i) => renderRankingItem(c, i + 1)).join('');
       
-      // Editor's Pick
       if (allComics.length > 0) {
         const pick = allComics[Math.floor(Math.random() * Math.min(5, allComics.length))];
         const pickChapters = await DB.getChapters(pick.id);
         document.getElementById('editorsPick').querySelector('img').src = pick.cover;
         document.getElementById('pickTitle').textContent = pick.title;
-        document.getElementById('pickDesc').textContent = pick.description || 'An amazing manga experience';
-        document.getElementById('pickViews').textContent = formatNumber(pick.views || 0);
-        document.getElementById('pickChapters').textContent = pickChapters.length;
+        document.getElementById('pickDesc').textContent = pick.description || pick.title;
         document.getElementById('editorsPick').onclick = () => window.location.href = `comic.html?id=${pick.id}`;
       }
       
-      // Footer Genres
       const categories = await DB.getCategories();
       document.getElementById('footerGenres').innerHTML = categories.slice(0, 6).map(c => 
         `<a href="browse.html?category=${c.name}" class="block text-gray-400 hover:text-accent transition">${c.name}</a>`
       ).join('');
     });
-
-    function filterRanking(period) {
-      ['tabWeekly', 'tabMonthly', 'tabAll'].forEach(id => {
-        document.getElementById(id).classList.remove('tab-active');
-        document.getElementById(id).classList.add('bg-dark-600', 'text-gray-400');
-      });
-      document.getElementById(period === 'weekly' ? 'tabWeekly' : period === 'monthly' ? 'tabMonthly' : 'tabAll')
-        .classList.add('tab-active');
-    }
   </script>
 </body>
 </html>
