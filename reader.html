@@ -1,49 +1,92 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>القارئ - Sedbox Comics</title>
+  <title>Reader - Sedbox Comics</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: { 900: '#0f0f13', 800: '#13131a', 700: '#1a1a24', 600: '#22222e', 500: '#2a2a38' },
+            accent: { DEFAULT: '#7c3aed', light: '#8b5cf6', dark: '#6d28d9' },
+            golden: '#fbbf24'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
-    body { margin: 0; padding: 0; overflow: hidden; background: #000; }
-    .reader-container { position: fixed; inset: 0; z-index: 2000; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #000; }
+    .reader-container { position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column; }
+    .reader-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; background: rgba(15, 15, 19, 0.95); border-bottom: 2px solid #7c3aed; z-index: 10; }
+    .reader-controls { display: flex; align-items: center; gap: 0.5rem; }
+    .reader-controls button { width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.1); color: white; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.2s; cursor: pointer; }
+    .reader-controls button:hover { background: #7c3aed; border-color: #7c3aed; }
+    .reader-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: 0.5rem; gap: 0.25rem; background: #0a0a0a; }
+    .reader-body img { max-width: 100%; transition: transform 0.3s ease; }
+    .reader-body.page-mode { overflow: hidden; position: relative; }
+    .reader-body.page-mode img { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-height: 100%; object-fit: contain; }
+    .reader-footer { display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 0.75rem; background: rgba(15, 15, 19, 0.95); border-top: 2px solid #7c3aed; flex-wrap: wrap; }
+    .reader-footer select { background: rgba(255, 255, 255, 0.1); color: white; border: 1px solid rgba(255, 255, 255, 0.2); padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; cursor: pointer; }
+    .reader-footer select:focus { outline: none; border-color: #7c3aed; }
   </style>
 </head>
 <body>
   <div class="reader-container">
+    <!-- Header -->
     <div class="reader-header">
-      <div>
-        <div style="font-weight: 700;" id="comicTitle">العنوان</div>
-        <div style="font-size: 0.85rem; color: #aaa;" id="chapterInfo">الفصل 1</div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-white truncate" id="comicTitle">Loading...</div>
+        <div class="text-gray-400 text-xs" id="chapterInfo">Chapter 1</div>
       </div>
       <div class="reader-controls">
-        <button onclick="toggleReaderMode()" title="تغيير الوضع" id="modeBtn">
+        <button onclick="toggleMode()" title="Toggle Mode" id="modeBtn">
           <i class="fas fa-columns"></i>
         </button>
-        <button onclick="zoomIn()" title="تكبير"><i class="fas fa-search-plus"></i></button>
-        <button onclick="zoomOut()" title="تصغير"><i class="fas fa-search-minus"></i></button>
-        <button onclick="closeReader()" title="إغلاق"><i class="fas fa-times"></i></button>
+        <button onclick="zoomIn()" title="Zoom In">
+          <i class="fas fa-search-plus"></i>
+        </button>
+        <button onclick="zoomOut()" title="Zoom Out">
+          <i class="fas fa-search-minus"></i>
+        </button>
+        <button onclick="closeReader()" title="Close" class="hover:bg-red-500">
+          <i class="fas fa-times"></i>
+        </button>
       </div>
     </div>
     
-    <div class="reader-body" id="readerBody"></div>
+    <!-- Body -->
+    <div class="reader-body" id="readerBody">
+      <div class="flex items-center justify-center h-full">
+        <div class="text-center text-white">
+          <i class="fas fa-spinner fa-spin text-4xl text-accent mb-4"></i>
+          <p>Loading pages...</p>
+        </div>
+      </div>
+    </div>
     
+    <!-- Footer -->
     <div class="reader-footer">
-      <button class="btn btn-secondary btn-sm" onclick="prevChapter()" id="prevChapterBtn">
-        <i class="fas fa-arrow-right"></i> الفصل السابق
+      <button onclick="prevChapter()" id="prevBtn" class="bg-dark-700 hover:bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+        <i class="fas fa-arrow-right"></i> Prev
       </button>
-      <select id="chapterSelect" onchange="goToChapter(this.value)"></select>
-      <span id="pageIndicator" style="font-weight: 700;">1 / 1</span>
-      <button class="btn btn-secondary btn-sm" onclick="nextChapter()" id="nextChapterBtn">
-        الفصل التالي <i class="fas fa-arrow-left"></i>
+      <select id="chapterSelect" onchange="goToChapter(this.value)" class="min-w-[150px]"></select>
+      <span id="pageIndicator" class="text-white font-bold text-sm">1 / 1</span>
+      <button onclick="nextChapter()" id="nextBtn" class="bg-dark-700 hover:bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+        Next <i class="fas fa-arrow-left"></i>
       </button>
     </div>
   </div>
@@ -76,7 +119,7 @@
       
       const select = document.getElementById('chapterSelect');
       select.innerHTML = chapters.map((ch, i) => 
-        `<option value="${i}">الفصل ${ch.number || i+1}: ${ch.title}</option>`
+        `<option value="${i}">Ch. ${ch.number || i+1}: ${ch.title}</option>`
       ).join('');
       
       if (chapterId) {
@@ -85,7 +128,7 @@
       }
       
       loadChapter(currentChapterIndex);
-      setupKeyboardNav();
+      setupKeyboard();
     });
 
     function loadChapter(index) {
@@ -95,11 +138,10 @@
       zoomLevel = 1;
       
       document.getElementById('chapterSelect').value = index;
-      document.getElementById('chapterInfo').textContent = 
-        `الفصل ${chapters[index].number || index+1}: ${chapters[index].title}`;
+      document.getElementById('chapterInfo').textContent = `Chapter ${chapters[index].number || index+1}: ${chapters[index].title}`;
       
-      document.getElementById('prevChapterBtn').disabled = index === 0;
-      document.getElementById('nextChapterBtn').disabled = index === chapters.length - 1;
+      document.getElementById('prevBtn').disabled = index === 0;
+      document.getElementById('nextBtn').disabled = index === chapters.length - 1;
       
       const chapter = chapters[index];
       const readerBody = document.getElementById('readerBody');
@@ -108,9 +150,12 @@
       
       if (!chapter.images || chapter.images.length === 0) {
         readerBody.innerHTML = `
-          <div style="text-align: center; color: #fff; padding: 3rem;">
-            <i class="fas fa-images" style="font-size: 4rem; opacity: 0.3;"></i>
-            <h3 style="margin-top: 1rem;">لا توجد صور</h3>
+          <div class="flex items-center justify-center h-full">
+            <div class="text-center text-white">
+              <i class="fas fa-images text-5xl text-gray-600 mb-4"></i>
+              <h3 class="text-xl font-bold">No Pages</h3>
+              <p class="text-gray-500 mt-2">This chapter has no pages yet.</p>
+            </div>
           </div>`;
         updatePageIndicator(0, 0);
         return;
@@ -120,7 +165,7 @@
         chapter.images.forEach((img, i) => {
           const imgEl = document.createElement('img');
           imgEl.src = img;
-          imgEl.alt = `صفحة ${i + 1}`;
+          imgEl.alt = `Page ${i + 1}`;
           imgEl.style.width = '100%';
           imgEl.style.maxWidth = '800px';
           imgEl.loading = 'lazy';
@@ -138,7 +183,7 @@
       currentPage = index;
       
       const readerBody = document.getElementById('readerBody');
-      readerBody.innerHTML = `<img src="${chapter.images[index]}" style="transform: scale(${zoomLevel}); transition: transform 0.3s;">`;
+      readerBody.innerHTML = `<img src="${chapter.images[index]}" style="transform: scale(${zoomLevel}); max-width: 100%; max-height: 100%;">`;
       readerBody.className = 'reader-body page-mode';
       
       updatePageIndicator(index + 1, chapter.images.length);
@@ -148,10 +193,9 @@
       document.getElementById('pageIndicator').textContent = `${current} / ${total}`;
     }
 
-    function toggleReaderMode() {
+    function toggleMode() {
       currentMode = currentMode === 'scroll' ? 'page' : 'scroll';
-      document.getElementById('modeBtn').innerHTML = 
-        currentMode === 'scroll' ? '<i class="fas fa-columns"></i>' : '<i class="fas fa-list"></i>';
+      document.getElementById('modeBtn').innerHTML = currentMode === 'scroll' ? '<i class="fas fa-columns"></i>' : '<i class="fas fa-list"></i>';
       loadChapter(currentChapterIndex);
     }
 
@@ -166,7 +210,7 @@
     function nextChapter() { loadChapter(currentChapterIndex + 1); }
     function goToChapter(index) { loadChapter(parseInt(index)); }
 
-    function setupKeyboardNav() {
+    function setupKeyboard() {
       document.addEventListener('keydown', function(e) {
         if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
           e.preventDefault();
@@ -191,7 +235,7 @@
 
     function closeReader() {
       if (comicId) window.location.href = `comic.html?id=${comicId}`;
-      else window.location.href = '../index.html';
+      else window.location.href = 'index.html';
     }
   </script>
 </body>

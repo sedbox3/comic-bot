@@ -1,67 +1,102 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إدارة التصنيفات - Sedbox Comics</title>
+  <title>Manage Categories - Sedbox Comics</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: { 900: '#0f0f13', 800: '#13131a', 700: '#1a1a24', 600: '#22222e', 500: '#2a2a38' },
+            accent: { DEFAULT: '#7c3aed', light: '#8b5cf6', dark: '#6d28d9' },
+            golden: '#fbbf24'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    .glass { background: rgba(26, 26, 36, 0.8); backdrop-filter: blur(12px); }
+    .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 64px); margin-top: 64px; }
+    @media (max-width: 1024px) { .admin-layout { grid-template-columns: 1fr; } .admin-sidebar { display: none; } }
+    .admin-sidebar { background: #13131a; border-left: 2px solid #22222e; padding: 1.5rem 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; }
+    .admin-sidebar .menu-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #9ca3af; font-weight: 600; transition: all 0.2s; border-right: 3px solid transparent; }
+    .admin-sidebar .menu-item:hover, .admin-sidebar .menu-item.active { color: #7c3aed; background: rgba(124, 58, 237, 0.1); border-right-color: #7c3aed; }
+  </style>
 </head>
-<body>
-  <nav class="navbar">
-    <a href="../index.html" class="navbar-brand">
-      <div class="logo-icon"><i class="fas fa-book-open"></i></div>
-      <span class="logo-text">Sedbox Comics</span>
-    </a>
-    <div class="navbar-actions">
-      <a href="../index.html" class="btn btn-secondary btn-sm"><i class="fas fa-home"></i> الموقع</a>
-      <button class="btn btn-danger btn-sm" onclick="DB.logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+<body class="bg-dark-900 text-white font-sans min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-dark-600">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <a href="../index.html" class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/30">
+          <i class="fas fa-book-open text-white text-lg"></i>
+        </div>
+        <span class="text-xl font-bold">Sed<span class="text-accent">box</span></span>
+      </a>
+      <div class="flex items-center gap-3">
+        <a href="../index.html" class="bg-dark-700 hover:bg-dark-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2">
+          <i class="fas fa-home"></i> Site
+        </a>
+        <button onclick="DB.logout()" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
     </div>
   </nav>
 
-  <main class="main-content">
-    <div class="admin-layout">
-      <aside class="admin-sidebar">
-        <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> الإحصائيات</a>
-        <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> الكوميكس</a>
-        <a href="chapters.html" class="menu-item"><i class="fas fa-list"></i> الفصول</a>
-        <a href="categories.html" class="menu-item active"><i class="fas fa-folder"></i> التصنيفات</a>
-        <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> الإعدادات</a>
-      </aside>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> Comics</a>
+      <a href="chapters.html" class="menu-item"><i class="fas fa-list"></i> Chapters</a>
+      <a href="categories.html" class="menu-item active"><i class="fas fa-folder"></i> Categories</a>
+      <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> Settings</a>
+    </aside>
 
-      <div class="admin-main">
-        <div class="section-header">
-          <h1 class="section-title">
-            <span class="icon"><i class="fas fa-folder"></i></span>
-            إدارة التصنيفات
-          </h1>
-        </div>
+    <!-- Main Content -->
+    <div class="p-6 lg:p-8">
+      <h1 class="text-3xl font-bold mb-8 flex items-center gap-3">
+        <span class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center">
+          <i class="fas fa-folder text-accent text-xl"></i>
+        </span>
+        Manage Categories
+      </h1>
 
-        <div id="alertBox"></div>
+      <div id="alertBox"></div>
 
-        <div class="admin-form" style="margin-bottom: 2rem; max-width: 500px;">
-          <h2 style="font-family: var(--font-comic); margin-bottom: 1.5rem; color: var(--accent);">
-            <i class="fas fa-plus-circle"></i> إضافة تصنيف جديد
-          </h2>
-          <form id="categoryForm">
-            <div class="form-group">
-              <label>اسم التصنيف *</label>
-              <input type="text" id="categoryName" placeholder="مثال: أكشن" required>
-            </div>
-            <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> حفظ</button>
-          </form>
-        </div>
-
-        <div id="categoriesList"></div>
+      <!-- Add Form -->
+      <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6 mb-8 max-w-lg">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+          <i class="fas fa-plus-circle text-accent"></i> Add New Category
+        </h2>
+        <form id="categoryForm" class="flex gap-3">
+          <input type="text" id="categoryName" placeholder="Category name" required
+                 class="flex-1 bg-dark-800 border-2 border-dark-500 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent transition">
+          <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition flex items-center gap-2">
+            <i class="fas fa-save"></i> Add
+          </button>
+        </form>
       </div>
+
+      <!-- Categories List -->
+      <div id="categoriesList" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
-  </main>
+  </div>
 
   <script src="../js/db.js"></script>
   <script>
@@ -77,18 +112,15 @@
     document.getElementById('categoryForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const name = document.getElementById('categoryName').value.trim();
-      if (!name) {
-        showAlert('يرجى إدخال اسم التصنيف', 'danger');
-        return;
-      }
+      if (!name) return;
 
       const result = await DB.addCategory(name);
       if (result) {
-        showAlert('تم إضافة التصنيف بنجاح!', 'success');
+        showAlert('Category added successfully!', 'success');
         document.getElementById('categoryName').value = '';
         loadCategories();
       } else {
-        showAlert('حدث خطأ أو التصنيف موجود مسبقاً', 'danger');
+        showAlert('Error or category already exists', 'danger');
       }
     });
 
@@ -97,46 +129,44 @@
       
       if (categories.length === 0) {
         document.getElementById('categoriesList').innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon"><i class="fas fa-folder-open"></i></div>
-            <h3>لا توجد تصنيفات بعد</h3>
-            <p>ابدأ بإضافة أول تصنيف.</p>
+          <div class="col-span-full text-center py-16 bg-dark-700 rounded-2xl border border-dark-500">
+            <i class="fas fa-folder-open text-5xl text-gray-600 mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">No Categories Yet</h3>
+            <p class="text-gray-500">Start by adding your first category.</p>
           </div>`;
         return;
       }
 
-      document.getElementById('categoriesList').innerHTML = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;">
-          ${categories.map(cat => `
-            <div class="comic-panel" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <div style="width: 50px; height: 50px; background: var(--accent); border: 3px solid #000; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 3px 3px 0 #000;">
-                  <i class="fas fa-folder"></i>
-                </div>
-                <div>
-                  <div style="font-weight: 700; font-size: 1.1rem;">${cat.name}</div>
-                </div>
-              </div>
-              <button class="btn btn-danger btn-sm" onclick="deleteCategory('${cat.id}', '${cat.name}')">
-                <i class="fas fa-trash"></i>
-              </button>
+      document.getElementById('categoriesList').innerHTML = categories.map(cat => `
+        <div class="bg-dark-700 rounded-xl border border-dark-500 p-4 flex items-center justify-between hover:border-accent/50 transition group">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center group-hover:bg-accent/30 transition">
+              <i class="fas fa-folder text-accent"></i>
             </div>
-          `).join('')}
-        </div>`;
+            <div>
+              <h4 class="font-semibold">${cat.name}</h4>
+            </div>
+          </div>
+          <button onclick="deleteCategory('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-2 rounded-lg transition">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `).join('');
     }
 
     async function deleteCategory(id, name) {
-      if (confirm(`هل أنت متأكد من حذف "${name}"؟`)) {
+      if (confirm(`Delete "${name}"?`)) {
         const result = await DB.deleteCategory(id);
         if (result) {
-          showAlert('تم الحذف بنجاح', 'success');
+          showAlert('Deleted successfully', 'success');
           loadCategories();
         }
       }
     }
 
     function showAlert(msg, type) {
-      document.getElementById('alertBox').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+      document.getElementById('alertBox').innerHTML = `
+        <div class="${type === 'success' ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-red-500/20 border-red-500/50 text-red-400'} border px-4 py-3 rounded-xl text-sm font-medium mb-4">${msg}</div>`;
       setTimeout(() => { document.getElementById('alertBox').innerHTML = ''; }, 3000);
     }
   </script>

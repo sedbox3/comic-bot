@@ -1,171 +1,237 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تفاصيل الكوميكس - Sedbox Comics</title>
+  <title>Comic Details - Sedbox Comics</title>
   <meta name="description" content="تفاصيل القصة المصورة والفصل المتاحة للقراءة">
   <meta name="robots" content="index, follow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: { 900: '#0f0f13', 800: '#13131a', 700: '#1a1a24', 600: '#22222e', 500: '#2a2a38' },
+            accent: { DEFAULT: '#7c3aed', light: '#8b5cf6', dark: '#6d28d9' },
+            golden: '#fbbf24'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    * { scrollbar-width: thin; scrollbar-color: #7c3aed #1a1a24; }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #1a1a24; }
+    ::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 4px; }
+    .glass { background: rgba(26, 26, 36, 0.8); backdrop-filter: blur(12px); }
+    .chapter-item { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.25rem; background: #13131a; border: 2px solid #22222e; border-radius: 12px; margin-bottom: 0.5rem; transition: all 0.2s; cursor: pointer; }
+    .chapter-item:hover { border-color: #7c3aed; background: #1a1a24; transform: translateX(-8px); }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  </style>
 </head>
-<body>
-  <nav class="navbar">
-    <a href="index.html" class="navbar-brand">
-      <div class="logo-icon"><i class="fas fa-book-open"></i></div>
-      <span class="logo-text">Sedbox Comics</span>
-    </a>
-    <div class="navbar-links" id="navLinks">
-      <a href="index.html">الرئيسية</a>
-      <a href="browse.html">تصفح</a>
-      <a href="browse.html?filter=popular">الأكثر قراءة</a>
-      <a href="browse.html?filter=latest">أحدث الإضافات</a>
-    </div>
-    <div class="navbar-actions">
-      <button class="theme-toggle" onclick="UI.toggleTheme()"><i class="fas fa-sun"></i></button>
-      <button class="mobile-menu-btn" onclick="UI.toggleMobileMenu()"><i class="fas fa-bars"></i></button>
+<body class="bg-dark-900 text-white font-sans min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-dark-600">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <a href="index.html" class="flex items-center gap-3 flex-shrink-0">
+        <div class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/30">
+          <i class="fas fa-book-open text-white text-lg"></i>
+        </div>
+        <span class="text-xl font-bold hidden sm:block">Sed<span class="text-accent">box</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-1">
+        <a href="index.html" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm">Home</a>
+        <a href="browse.html" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm">Browse</a>
+        <a href="browse.html?filter=popular" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm">Trending</a>
+      </div>
+      <div class="flex items-center gap-2">
+        <a href="admin/login.html" class="hidden sm:flex items-center gap-2 bg-accent hover:bg-accent-dark text-white px-4 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-accent/30">
+          <i class="fas fa-user"></i> Sign Up
+        </a>
+      </div>
     </div>
   </nav>
 
-  <main class="main-content">
-    <div class="comic-detail" id="comicDetail">
-      <div class="cover-section" id="coverSection"></div>
-      <div class="info-section" id="infoSection">
-        <div class="loader"><div class="spinner"></div></div>
+  <!-- Main Content -->
+  <main class="pt-20 pb-12">
+    <div class="max-w-7xl mx-auto px-4">
+      
+      <!-- Comic Detail -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8" id="comicDetail">
+        
+        <!-- Cover Section -->
+        <div class="lg:col-span-4">
+          <div class="sticky top-24">
+            <div id="coverSection" class="rounded-2xl overflow-hidden border-2 border-dark-500 shadow-2xl shadow-accent/10">
+              <div class="aspect-[3/4] bg-dark-700 flex items-center justify-center">
+                <i class="fas fa-image text-6xl text-gray-600"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="lg:col-span-8 space-y-6" id="infoSection">
+          <div class="animate-pulse space-y-4">
+            <div class="h-8 bg-dark-700 rounded w-3/4"></div>
+            <div class="h-4 bg-dark-700 rounded w-1/2"></div>
+            <div class="h-20 bg-dark-700 rounded"></div>
+          </div>
+        </div>
       </div>
+
     </div>
   </main>
 
-  <footer class="footer">
-    <div class="footer-bottom">
-      <p>© 2026 Sedbox Comics. جميع الحقوق محفوظة.</p>
+  <!-- Footer -->
+  <footer class="bg-dark-800 border-t border-dark-600 mt-12">
+    <div class="max-w-7xl mx-auto px-4 py-8 text-center text-gray-500 text-sm">
+      © 2026 Sedbox Comics. All rights reserved.
     </div>
   </footer>
 
   <script src="js/db.js"></script>
-  <script src="js/ui.js"></script>
   <script>
-    let currentComic = null;
-
     document.addEventListener('DOMContentLoaded', async function() {
       await DB.init();
-      UI.loadTheme();
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const comicId = urlParams.get('id');
-
+      
+      const params = new URLSearchParams(window.location.search);
+      const comicId = params.get('id');
+      
       if (!comicId) {
-        document.getElementById('infoSection').innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3>لم يتم العثور على الكوميكس</h3>
-            <a href="browse.html" class="btn btn-primary"><i class="fas fa-arrow-right"></i> تصفح الكوميكس</a>
-          </div>`;
+        showError('Comic not found');
         return;
       }
-
+      
       const comic = await DB.getComicById(comicId);
       if (!comic) {
-        document.getElementById('infoSection').innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3>لم يتم العثور على الكوميكس</h3>
-            <a href="browse.html" class="btn btn-primary"><i class="fas fa-arrow-right"></i> تصفح الكوميكس</a>
-          </div>`;
+        showError('Comic not found');
         return;
       }
-
-      currentComic = comic;
+      
       DB.updateViews(comicId);
-
       document.title = `${comic.title} - Sedbox Comics`;
-
+      
       const chapters = await DB.getChapters(comicId);
-
+      chapters.sort((a, b) => (b.number || 0) - (a.number || 0));
+      
+      // Cover
       document.getElementById('coverSection').innerHTML = `
-        <img src="${comic.cover}" alt="${comic.title}">
+        <img src="${comic.cover || 'https://via.placeholder.com/400x533?text=No+Cover'}" alt="${comic.title}" class="w-full">
       `;
-
+      
+      // Info
       document.getElementById('infoSection').innerHTML = `
-        <h1>${comic.title}</h1>
-        
-        <div class="meta-row">
-          <div class="meta-item">
-            <i class="fas fa-folder" style="color: var(--accent);"></i>
-            ${comic.category || 'غير محدد'}
-          </div>
-          <div class="meta-item">
-            <i class="fas fa-eye" style="color: var(--accent2);"></i>
-            ${UI.formatNumber(comic.views || 0)} مشاهدة
-          </div>
-          <div class="meta-item">
-            <i class="fas fa-star" style="color: var(--accent3);"></i>
-            ${comic.rating || '0'}
-          </div>
-          <div class="meta-item">
-            <i class="fas fa-book" style="color: var(--accent4);"></i>
-            ${chapters.length} فصل
-          </div>
+        <div>
+          <h1 class="text-3xl lg:text-4xl font-bold mb-2">${comic.title}</h1>
+          <p class="text-gray-400 text-sm">by ${comic.author || 'Unknown Author'}</p>
         </div>
-
+        
+        <div class="flex flex-wrap gap-3">
+          <span class="bg-accent/20 text-accent px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2">
+            <i class="fas fa-folder"></i> ${comic.category || 'Manga'}
+          </span>
+          <span class="bg-dark-600 text-gray-300 px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2">
+            <i class="fas fa-eye"></i> ${formatNumber(comic.views || 0)} views
+          </span>
+          <span class="bg-golden/20 text-golden px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2">
+            <i class="fas fa-star"></i> ${(comic.rating || 0).toFixed(1)}
+          </span>
+          <span class="bg-dark-600 text-gray-300 px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2">
+            <i class="fas fa-book"></i> ${chapters.length} chapters
+          </span>
+        </div>
+        
         ${comic.description ? `
-          <div class="description">
-            <p>${comic.description}</p>
+          <div class="bg-dark-700 rounded-2xl p-6 border border-dark-500">
+            <h3 class="font-bold text-lg mb-3 flex items-center gap-2">
+              <i class="fas fa-info-circle text-accent"></i> Synopsis
+            </h3>
+            <p class="text-gray-400 leading-relaxed">${comic.description}</p>
           </div>
         ` : ''}
-
-        ${comic.author ? `
-          <div class="meta-row">
-            <div class="meta-item">
-              <i class="fas fa-user-pen" style="color: var(--accent5);"></i>
-              ${comic.author}
-            </div>
-          </div>
-        ` : ''}
-
-        <div class="action-buttons">
+        
+        <div class="flex flex-wrap gap-3">
           ${chapters.length > 0 ? `
-            <a href="reader.html?comic=${comicId}&chapter=${chapters[0].id}" class="btn btn-primary">
-              <i class="fas fa-play"></i> ابدأ القراءة
+            <a href="reader.html?comic=${comicId}&chapter=${chapters[0].id}" class="bg-accent hover:bg-accent-dark text-white px-6 py-3 rounded-full font-semibold transition shadow-lg shadow-accent/30 flex items-center gap-2">
+              <i class="fas fa-play"></i> Start Reading
             </a>
           ` : ''}
-          <a href="browse.html?category=${comic.category}" class="btn btn-secondary">
+          <a href="browse.html?category=${comic.category}" class="bg-dark-600 hover:bg-dark-500 text-white px-6 py-3 rounded-full font-semibold transition flex items-center gap-2">
             <i class="fas fa-folder"></i> ${comic.category}
           </a>
         </div>
-
-        <div class="chapters-list">
-          <h2 class="section-title" style="font-size: 1.5rem; margin-bottom: 1rem;">
-            <span class="icon"><i class="fas fa-list"></i></span>
-            الفصول (${chapters.length})
+        
+        <!-- Chapters List -->
+        <div>
+          <h2 class="text-2xl font-bold flex items-center gap-3 mb-4">
+            <span class="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
+              <i class="fas fa-list text-accent"></i>
+            </span>
+            Chapters (${chapters.length})
           </h2>
+          
           ${chapters.length === 0 ? `
-            <div class="empty-state">
-              <div class="empty-icon"><i class="fas fa-book-open"></i></div>
-              <h3>لا توجد فصول بعد</h3>
-              <p>لم يتم إضافة أي فصل لهذا الكوميكس.</p>
+            <div class="text-center py-12 bg-dark-700 rounded-2xl border border-dark-500">
+              <i class="fas fa-book-open text-5xl text-gray-600 mb-4"></i>
+              <h3 class="text-xl font-bold mb-2">No Chapters Yet</h3>
+              <p class="text-gray-500">Chapters will appear here once added.</p>
             </div>
-          ` : chapters.map((ch, index) => `
-            <a href="reader.html?comic=${comicId}&chapter=${ch.id}" class="chapter-item slide-in" style="animation-delay: ${index * 0.05}s">
-              <div>
-                <div class="chapter-title">الفصل ${ch.number || index + 1}: ${ch.title}</div>
-                <div class="chapter-meta">
-                  <i class="fas fa-image"></i> ${ch.images ? ch.images.length : 0} صفحة
-                </div>
-              </div>
-              <div style="color: var(--accent); font-size: 1.2rem;">
-                <i class="fas fa-arrow-left"></i>
-              </div>
-            </a>
-          `).join('')}
+          ` : `
+            <div class="space-y-2" id="chaptersList">
+              ${chapters.map((ch, index) => `
+                <a href="reader.html?comic=${comicId}&chapter=${ch.id}" class="chapter-item" style="animation-delay: ${index * 0.05}s">
+                  <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center text-accent font-bold">
+                      ${ch.number || index + 1}
+                    </div>
+                    <div>
+                      <div class="font-semibold">Chapter ${ch.number || index + 1}: ${ch.title}</div>
+                      <div class="text-gray-500 text-sm mt-0.5">
+                        <i class="fas fa-image"></i> ${ch.images ? ch.images.length : 0} pages
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-accent">
+                    <i class="fas fa-arrow-left"></i>
+                  </div>
+                </a>
+              `).join('')}
+            </div>
+          `}
         </div>
       `;
     });
+
+    function showError(msg) {
+      document.getElementById('infoSection').innerHTML = `
+        <div class="text-center py-16">
+          <i class="fas fa-exclamation-triangle text-6xl text-gray-600 mb-4"></i>
+          <h3 class="text-xl font-bold mb-4">${msg}</h3>
+          <a href="browse.html" class="inline-flex items-center gap-2 bg-accent hover:bg-accent-dark text-white px-6 py-3 rounded-full font-semibold transition">
+            <i class="fas fa-arrow-right"></i> Browse Comics
+          </a>
+        </div>
+      `;
+    }
+
+    function formatNumber(num) {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+      return num.toString();
+    }
   </script>
 </body>
 </html>

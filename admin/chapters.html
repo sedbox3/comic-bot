@@ -1,93 +1,143 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إدارة الفصول - Sedbox Comics</title>
+  <title>Manage Chapters - Sedbox Comics</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: { 900: '#0f0f13', 800: '#13131a', 700: '#1a1a24', 600: '#22222e', 500: '#2a2a38' },
+            accent: { DEFAULT: '#7c3aed', light: '#8b5cf6', dark: '#6d28d9' },
+            golden: '#fbbf24'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    .glass { background: rgba(26, 26, 36, 0.8); backdrop-filter: blur(12px); }
+    .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 64px); margin-top: 64px; }
+    @media (max-width: 1024px) { .admin-layout { grid-template-columns: 1fr; } .admin-sidebar { display: none; } }
+    .admin-sidebar { background: #13131a; border-left: 2px solid #22222e; padding: 1.5rem 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; }
+    .admin-sidebar .menu-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #9ca3af; font-weight: 600; transition: all 0.2s; border-right: 3px solid transparent; }
+    .admin-sidebar .menu-item:hover, .admin-sidebar .menu-item.active { color: #7c3aed; background: rgba(124, 58, 237, 0.1); border-right-color: #7c3aed; }
+  </style>
 </head>
-<body>
-  <nav class="navbar">
-    <a href="../index.html" class="navbar-brand">
-      <div class="logo-icon"><i class="fas fa-book-open"></i></div>
-      <span class="logo-text">Sedbox Comics</span>
-    </a>
-    <div class="navbar-actions">
-      <a href="../index.html" class="btn btn-secondary btn-sm"><i class="fas fa-home"></i> الموقع</a>
-      <button class="btn btn-danger btn-sm" onclick="DB.logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+<body class="bg-dark-900 text-white font-sans min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-dark-600">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <a href="../index.html" class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/30">
+          <i class="fas fa-book-open text-white text-lg"></i>
+        </div>
+        <span class="text-xl font-bold">Sed<span class="text-accent">box</span></span>
+      </a>
+      <div class="flex items-center gap-3">
+        <a href="../index.html" class="bg-dark-700 hover:bg-dark-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2">
+          <i class="fas fa-home"></i> Site
+        </a>
+        <button onclick="DB.logout()" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
     </div>
   </nav>
 
-  <main class="main-content">
-    <div class="admin-layout">
-      <aside class="admin-sidebar">
-        <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> الإحصائيات</a>
-        <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> الكوميكس</a>
-        <a href="chapters.html" class="menu-item active"><i class="fas fa-list"></i> الفصول</a>
-        <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> التصنيفات</a>
-        <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> الإعدادات</a>
-      </aside>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> Comics</a>
+      <a href="chapters.html" class="menu-item active"><i class="fas fa-list"></i> Chapters</a>
+      <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> Categories</a>
+      <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> Settings</a>
+    </aside>
 
-      <div class="admin-main">
-        <div class="section-header">
-          <h1 class="section-title">
-            <span class="icon"><i class="fas fa-list"></i></span>
-            إدارة الفصول
-          </h1>
-          <button class="btn btn-primary" onclick="showAddForm()">
-            <i class="fas fa-plus"></i> إضافة فصل
-          </button>
-        </div>
-
-        <div id="alertBox"></div>
-
-        <div id="addForm" style="display: none;">
-          <div class="admin-form" style="margin-bottom: 2rem;">
-            <h2 style="font-family: var(--font-comic); margin-bottom: 1.5rem; color: var(--accent);">
-              <i class="fas fa-plus-circle"></i> إضافة فصل جديد
-            </h2>
-            <form id="chapterForm">
-              <div class="form-group">
-                <label>الكوميكس *</label>
-                <select id="chapterComic" required></select>
-              </div>
-              <div class="form-group">
-                <label>رقم الفصل *</label>
-                <input type="number" id="chapterNumber" min="1" placeholder="1" required>
-              </div>
-              <div class="form-group">
-                <label>عنوان الفصل *</label>
-                <input type="text" id="chapterTitle" placeholder="مثال: البداية" required>
-              </div>
-              <div class="form-group">
-                <label>صور الفصل *</label>
-                <div class="drop-zone" id="pagesDropZone">
-                  <div class="drop-icon"><i class="fas fa-images"></i></div>
-                  <p>اسحب الصور هنا أو انقر للاختيار</p>
-                  <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">يمكنك اختيار عدة صور دفعة واحدة</p>
-                  <input type="file" id="pagesInput" accept="image/*" multiple style="display: none;">
-                </div>
-                <div id="pagesPreview" class="upload-preview"></div>
-              </div>
-              <div style="display: flex; gap: 1rem;">
-                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> حفظ الفصل</button>
-                <button type="button" class="btn btn-secondary" onclick="hideAddForm()"><i class="fas fa-times"></i> إلغاء</button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <div id="chaptersList"></div>
+    <!-- Main Content -->
+    <div class="p-6 lg:p-8">
+      <div class="flex items-center justify-between mb-8">
+        <h1 class="text-3xl font-bold flex items-center gap-3">
+          <span class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center">
+            <i class="fas fa-list text-accent text-xl"></i>
+          </span>
+          Manage Chapters
+        </h1>
+        <button onclick="showAddForm()" class="bg-accent hover:bg-accent-dark text-white px-5 py-2.5 rounded-xl font-semibold transition flex items-center gap-2 shadow-lg shadow-accent/30">
+          <i class="fas fa-plus"></i> Add Chapter
+        </button>
       </div>
+
+      <div id="alertBox"></div>
+
+      <!-- Add Form -->
+      <div id="addForm" class="hidden mb-8">
+        <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6 lg:p-8">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fas fa-plus-circle text-accent"></i> Add New Chapter
+          </h2>
+          <form id="chapterForm" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-2">Comic *</label>
+                <select id="chapterComic" required
+                        class="w-full bg-dark-800 border-2 border-dark-500 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition">
+                  <option value="">Select Comic</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-2">Chapter Number *</label>
+                <input type="number" id="chapterNumber" min="1" placeholder="1" required
+                       class="w-full bg-dark-800 border-2 border-dark-500 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent transition">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-2">Title *</label>
+                <input type="text" id="chapterTitle" placeholder="Chapter title" required
+                       class="w-full bg-dark-800 border-2 border-dark-500 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent transition">
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold text-gray-300 mb-2">Pages *</label>
+              <div class="border-2 border-dashed border-dark-500 rounded-xl p-8 text-center cursor-pointer hover:border-accent transition" id="pagesDropZone">
+                <i class="fas fa-images text-4xl text-gray-500 mb-3"></i>
+                <p class="text-gray-400">Click or drag images here</p>
+                <p class="text-gray-600 text-sm mt-1">You can select multiple files</p>
+                <input type="file" id="pagesInput" accept="image/*" multiple class="hidden">
+              </div>
+              <div id="pagesPreview" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2 mt-4"></div>
+            </div>
+            
+            <div class="flex gap-3">
+              <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition flex items-center gap-2">
+                <i class="fas fa-save"></i> Save Chapter
+              </button>
+              <button type="button" onclick="hideAddForm()" class="bg-dark-600 hover:bg-dark-500 text-white px-6 py-3 rounded-xl font-semibold transition">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Chapters Table -->
+      <div id="chaptersList"></div>
     </div>
-  </main>
+  </div>
 
   <script src="../js/db.js"></script>
   <script>
@@ -105,9 +155,8 @@
     async function loadComics() {
       const comics = await DB.getLatestComics(200);
       const select = document.getElementById('chapterComic');
-      select.innerHTML = '<option value="">اختر الكوميكس</option>' +
+      select.innerHTML = '<option value="">Select Comic</option>' +
         comics.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
-
       loadChapters();
     }
 
@@ -127,16 +176,16 @@
 
     document.getElementById('pagesDropZone').addEventListener('dragover', (e) => {
       e.preventDefault();
-      document.getElementById('pagesDropZone').classList.add('dragover');
+      e.currentTarget.classList.add('border-accent');
     });
 
-    document.getElementById('pagesDropZone').addEventListener('dragleave', () => {
-      document.getElementById('pagesDropZone').classList.remove('dragover');
+    document.getElementById('pagesDropZone').addEventListener('dragleave', (e) => {
+      e.currentTarget.classList.remove('border-accent');
     });
 
     document.getElementById('pagesDropZone').addEventListener('drop', (e) => {
       e.preventDefault();
-      document.getElementById('pagesDropZone').classList.remove('dragover');
+      e.currentTarget.classList.remove('border-accent');
       const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
       files.forEach(file => {
         if (!pageFiles.find(f => f.name === file.name && f.size === file.size)) {
@@ -152,13 +201,16 @@
       pageFiles.forEach((file, index) => {
         const reader = new FileReader();
         reader.onload = function(ev) {
-          container.innerHTML += `
-            <div class="preview-item">
-              <img src="${ev.target.result}" alt="صفحة ${index + 1}">
-              <div class="remove-btn" onclick="removePage(${index})">
-                <i class="fas fa-times"></i>
-              </div>
-            </div>`;
+          const div = document.createElement('div');
+          div.className = 'relative aspect-[3/4] rounded-lg overflow-hidden border-2 border-dark-500';
+          div.innerHTML = `
+            <img src="${ev.target.result}" alt="Page ${index + 1}" class="w-full h-full object-cover">
+            <button type="button" onclick="removePage(${index})" class="absolute top-1 left-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">
+              <i class="fas fa-times"></i>
+            </button>
+            <div class="absolute bottom-1 right-1 bg-black/70 text-xs px-1.5 py-0.5 rounded">${index + 1}</div>
+          `;
+          container.appendChild(div);
         };
         reader.readAsDataURL(file);
       });
@@ -176,16 +228,16 @@
       const chapterTitle = document.getElementById('chapterTitle').value.trim();
 
       if (!comicId || !chapterTitle) {
-        showAlert('يرجى ملء جميع الحقول', 'danger');
+        showAlert('Please fill all required fields', 'danger');
         return;
       }
 
       if (pageFiles.length === 0) {
-        showAlert('يرجى اختيار صور الفصل', 'danger');
+        showAlert('Please select at least one image', 'danger');
         return;
       }
 
-      showAlert('جاري رفع الصور، يرجى الانتظار...', 'warning');
+      showAlert('Uploading images, please wait...', 'warning');
 
       const images = [];
       for (const file of pageFiles) {
@@ -193,69 +245,59 @@
         images.push(base64);
       }
 
-      const chapterData = {
-        comicId,
-        number: chapterNumber,
-        title: chapterTitle,
-        images
-      };
-
-      const result = await DB.addChapter(chapterData);
+      const result = await DB.addChapter({ comicId, number: chapterNumber, title: chapterTitle, images });
+      
       if (result) {
-        showAlert('تم إضافة الفصل بنجاح!', 'success');
+        showAlert('Chapter added successfully!', 'success');
         hideAddForm();
         loadChapters();
       } else {
-        showAlert('حدث خطأ أثناء الحفظ', 'danger');
+        showAlert('Error saving chapter', 'danger');
       }
     });
 
     async function loadChapters() {
       const comics = await DB.getLatestComics(200);
-      const comicsMap = {};
-      comics.forEach(c => { comicsMap[c.id] = c.title; });
-
       let allChapters = [];
+      
       for (const comic of comics) {
         const chapters = await DB.getChapters(comic.id);
-        chapters.forEach(ch => {
-          allChapters.push({ ...ch, comicTitle: comic.title });
-        });
+        chapters.forEach(ch => allChapters.push({ ...ch, comicTitle: comic.title, comicId: comic.id }));
       }
 
       allChapters.sort((a, b) => (b.number || 0) - (a.number || 0));
 
       if (allChapters.length === 0) {
         document.getElementById('chaptersList').innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon"><i class="fas fa-list"></i></div>
-            <h3>لا توجد فصول بعد</h3>
-            <p>ابدأ بإضافة أول فصل.</p>
+          <div class="text-center py-16 bg-dark-700 rounded-2xl border border-dark-500">
+            <i class="fas fa-list text-5xl text-gray-600 mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">No Chapters Yet</h3>
+            <p class="text-gray-500">Start by adding your first chapter.</p>
           </div>`;
         return;
       }
 
       document.getElementById('chaptersList').innerHTML = `
-        <div class="admin-table" style="overflow-x: auto;">
-          <table style="width: 100%; border-collapse: collapse;">
+        <div class="bg-dark-700 rounded-2xl border border-dark-500 overflow-hidden">
+          <table class="w-full">
             <thead>
-              <tr style="background: var(--bg-secondary); border-bottom: 3px solid var(--accent);">
-                <th style="padding: 1rem; text-align: right;">الكوميكس</th>
-                <th style="padding: 1rem; text-align: right;">رقم الفصل</th>
-                <th style="padding: 1rem; text-align: right;">العنوان</th>
-                <th style="padding: 1rem; text-align: right;">الصور</th>
-                <th style="padding: 1rem; text-align: center;">الإجراءات</th>
+              <tr class="border-b border-dark-500">
+                <th class="text-left p-4 text-gray-400 font-semibold">Comic</th>
+                <th class="text-left p-4 text-gray-400 font-semibold">Ch.</th>
+                <th class="text-left p-4 text-gray-400 font-semibold">Title</th>
+                <th class="text-left p-4 text-gray-400 font-semibold">Pages</th>
+                <th class="text-center p-4 text-gray-400 font-semibold">Action</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody class="divide-y divide-dark-500">
               ${allChapters.slice(0, 50).map(ch => `
-                <tr style="border-bottom: 2px solid var(--border);">
-                  <td style="padding: 1rem;">${ch.comicTitle}</td>
-                  <td style="padding: 1rem;">${ch.number || '-'}</td>
-                  <td style="padding: 1rem; font-weight: 700;">${ch.title}</td>
-                  <td style="padding: 1rem;">${ch.images ? ch.images.length : 0} صفحة</td>
-                  <td style="padding: 1rem; text-align: center;">
-                    <button class="btn btn-danger btn-sm" onclick="deleteChapter('${ch.comicId}', '${ch.id}')">
+                <tr class="hover:bg-dark-600 transition">
+                  <td class="p-4 font-medium">${ch.comicTitle}</td>
+                  <td class="p-4">${ch.number || '-'}</td>
+                  <td class="p-4">${ch.title}</td>
+                  <td class="p-4 text-gray-400">${ch.images ? ch.images.length : 0} pages</td>
+                  <td class="p-4 text-center">
+                    <button onclick="deleteChapter('${ch.comicId}', '${ch.id}')" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-1.5 rounded-lg text-sm transition">
                       <i class="fas fa-trash"></i>
                     </button>
                   </td>
@@ -267,30 +309,36 @@
     }
 
     function showAddForm() {
-      document.getElementById('addForm').style.display = 'block';
+      document.getElementById('addForm').classList.remove('hidden');
       document.getElementById('addForm').scrollIntoView({ behavior: 'smooth' });
     }
 
     function hideAddForm() {
-      document.getElementById('addForm').style.display = 'none';
+      document.getElementById('addForm').classList.add('hidden');
       document.getElementById('chapterForm').reset();
       document.getElementById('pagesPreview').innerHTML = '';
       pageFiles = [];
     }
 
     async function deleteChapter(comicId, chapterId) {
-      if (confirm('هل أنت متأكد من حذف هذا الفصل؟')) {
+      if (confirm('Delete this chapter?')) {
         const result = await DB.deleteChapter(comicId, chapterId);
         if (result) {
-          showAlert('تم الحذف بنجاح', 'success');
+          showAlert('Deleted successfully', 'success');
           loadChapters();
         }
       }
     }
 
     function showAlert(msg, type) {
-      document.getElementById('alertBox').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-      setTimeout(() => { document.getElementById('alertBox').innerHTML = ''; }, 5000);
+      const colors = {
+        success: 'bg-green-500/20 border-green-500/50 text-green-400',
+        danger: 'bg-red-500/20 border-red-500/50 text-red-400',
+        warning: 'bg-golden/20 border-golden/50 text-golden'
+      };
+      document.getElementById('alertBox').innerHTML = `
+        <div class="${colors[type]} border px-4 py-3 rounded-xl text-sm font-medium mb-4">${msg}</div>`;
+      if (type !== 'warning') setTimeout(() => { document.getElementById('alertBox').innerHTML = ''; }, 3000);
     }
   </script>
 </body>

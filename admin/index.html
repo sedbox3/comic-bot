@@ -1,108 +1,159 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>لوحة التحكم - Sedbox Comics</title>
+  <title>Dashboard - Sedbox Comics</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: { 900: '#0f0f13', 800: '#13131a', 700: '#1a1a24', 600: '#22222e', 500: '#2a2a38' },
+            accent: { DEFAULT: '#7c3aed', light: '#8b5cf6', dark: '#6d28d9' },
+            golden: '#fbbf24'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    .glass { background: rgba(26, 26, 36, 0.8); backdrop-filter: blur(12px); }
+    .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 64px); margin-top: 64px; }
+    @media (max-width: 1024px) { .admin-layout { grid-template-columns: 1fr; } .admin-sidebar { display: none; } }
+    .admin-sidebar { background: #13131a; border-left: 2px solid #22222e; padding: 1.5rem 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; }
+    .admin-sidebar .menu-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #9ca3af; font-weight: 600; transition: all 0.2s; border-right: 3px solid transparent; }
+    .admin-sidebar .menu-item:hover, .admin-sidebar .menu-item.active { color: #7c3aed; background: rgba(124, 58, 237, 0.1); border-right-color: #7c3aed; }
+  </style>
 </head>
-<body>
-  <nav class="navbar">
-    <a href="../index.html" class="navbar-brand">
-      <div class="logo-icon"><i class="fas fa-book-open"></i></div>
-      <span class="logo-text">Sedbox Comics</span>
-    </a>
-    <div class="navbar-actions">
-      <a href="../index.html" class="btn btn-secondary btn-sm"><i class="fas fa-home"></i> الموقع</a>
-      <button class="btn btn-danger btn-sm" onclick="DB.logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+<body class="bg-dark-900 text-white font-sans min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-dark-600">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <a href="../index.html" class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/30">
+          <i class="fas fa-book-open text-white text-lg"></i>
+        </div>
+        <span class="text-xl font-bold">Sed<span class="text-accent">box</span></span>
+      </a>
+      <div class="flex items-center gap-3">
+        <a href="../index.html" class="bg-dark-700 hover:bg-dark-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2">
+          <i class="fas fa-home"></i> Site
+        </a>
+        <button onclick="DB.logout()" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
     </div>
   </nav>
 
-  <main class="main-content">
-    <div class="admin-layout">
-      <aside class="admin-sidebar">
-        <a href="index.html" class="menu-item active">
-          <i class="fas fa-chart-pie"></i> الإحصائيات
-        </a>
-        <a href="comics.html" class="menu-item">
-          <i class="fas fa-book"></i> الكوميكس
-        </a>
-        <a href="chapters.html" class="menu-item">
-          <i class="fas fa-list"></i> الفصول
-        </a>
-        <a href="categories.html" class="menu-item">
-          <i class="fas fa-folder"></i> التصنيفات
-        </a>
-        <a href="settings.html" class="menu-item">
-          <i class="fas fa-cog"></i> الإعدادات
-        </a>
-      </aside>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <a href="index.html" class="menu-item active"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> Comics</a>
+      <a href="chapters.html" class="menu-item"><i class="fas fa-list"></i> Chapters</a>
+      <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> Categories</a>
+      <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> Settings</a>
+    </aside>
 
-      <div class="admin-main">
-        <h1 class="section-title" style="margin-bottom: 2rem;">
-          <span class="icon"><i class="fas fa-chart-pie"></i></span>
-          لوحة التحكم
-        </h1>
+    <!-- Main Content -->
+    <div class="p-6 lg:p-8">
+      <h1 class="text-3xl font-bold mb-8 flex items-center gap-3">
+        <span class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center">
+          <i class="fas fa-chart-pie text-accent text-xl"></i>
+        </span>
+        Dashboard
+      </h1>
 
-        <div class="admin-stats-grid" id="statsGrid">
-          <div class="admin-stat-card">
-            <div class="stat-number" id="statComics">0</div>
-            <div class="stat-label"><i class="fas fa-book"></i> كوميكس</div>
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6 text-center hover:border-accent/50 transition">
+          <div class="w-14 h-14 bg-accent/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-book text-accent text-xl"></i>
           </div>
-          <div class="admin-stat-card">
-            <div class="stat-number" id="statChapters">0</div>
-            <div class="stat-label"><i class="fas fa-list"></i> فصول</div>
+          <div class="text-3xl font-bold text-accent" id="statComics">0</div>
+          <div class="text-gray-400 text-sm mt-1">Comics</div>
+        </div>
+        <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6 text-center hover:border-accent/50 transition">
+          <div class="w-14 h-14 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-list text-green-500 text-xl"></i>
           </div>
-          <div class="admin-stat-card">
-            <div class="stat-number" id="statCategories">0</div>
-            <div class="stat-label"><i class="fas fa-folder"></i> تصنيفات</div>
+          <div class="text-3xl font-bold text-green-500" id="statChapters">0</div>
+          <div class="text-gray-400 text-sm mt-1">Chapters</div>
+        </div>
+        <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6 text-center hover:border-accent/50 transition">
+          <div class="w-14 h-14 bg-golden/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-folder text-golden text-xl"></i>
           </div>
-          <div class="admin-stat-card">
-            <div class="stat-number" id="statViews">0</div>
-            <div class="stat-label"><i class="fas fa-eye"></i> مشاهدات</div>
+          <div class="text-3xl font-bold text-golden" id="statCategories">0</div>
+          <div class="text-gray-400 text-sm mt-1">Categories</div>
+        </div>
+        <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6 text-center hover:border-accent/50 transition">
+          <div class="w-14 h-14 bg-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-eye text-purple-400 text-xl"></i>
+          </div>
+          <div class="text-3xl font-bold text-purple-400" id="statViews">0</div>
+          <div class="text-gray-400 text-sm mt-1">Views</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6">
+          <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <i class="fas fa-bolt text-accent"></i> Quick Actions
+          </h3>
+          <div class="space-y-3">
+            <a href="comics.html?action=add" class="flex items-center gap-3 p-3 bg-accent hover:bg-accent-dark rounded-xl transition text-white font-medium">
+              <i class="fas fa-plus"></i> Add New Comic
+            </a>
+            <a href="chapters.html" class="flex items-center gap-3 p-3 bg-dark-600 hover:bg-dark-500 rounded-xl transition">
+              <i class="fas fa-upload text-accent"></i> Upload Chapters
+            </a>
+            <a href="categories.html" class="flex items-center gap-3 p-3 bg-dark-600 hover:bg-dark-500 rounded-xl transition">
+              <i class="fas fa-folder-plus text-green-500"></i> Manage Categories
+            </a>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-top: 2rem;">
-          <div class="comic-panel" style="padding: 2rem;">
-            <h3 style="font-family: var(--font-comic); margin-bottom: 1rem; color: var(--accent);">
-              <i class="fas fa-bolt"></i> إجراءات سريعة
-            </h3>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-              <a href="comics.html?action=add" class="btn btn-primary" style="justify-content: center;">
-                <i class="fas fa-plus"></i> إضافة كوميكس جديد
-              </a>
-              <a href="chapters.html" class="btn btn-secondary" style="justify-content: center;">
-                <i class="fas fa-upload"></i> إضافة فصول
-              </a>
-              <a href="categories.html" class="btn btn-secondary" style="justify-content: center;">
-                <i class="fas fa-folder-plus"></i> إدارة التصنيفات
-              </a>
+        <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6">
+          <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+            <i class="fas fa-info-circle text-accent"></i> System Info
+          </h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex justify-between py-2 border-b border-dark-500">
+              <span class="text-gray-400">Platform</span>
+              <span class="font-medium">Sedbox Comics</span>
             </div>
-          </div>
-
-          <div class="comic-panel" style="padding: 2rem;">
-            <h3 style="font-family: var(--font-comic); margin-bottom: 1rem; color: var(--accent2);">
-              <i class="fas fa-info-circle"></i> معلومات
-            </h3>
-            <div style="color: var(--text-secondary); line-height: 2;">
-              <p><strong>الموقع:</strong> Sedbox Comics</p>
-              <p><strong>الإصدار:</strong> 2.0</p>
-              <p><strong>الخادم:</strong> Firebase</p>
-              <p><strong>الاستضافة:</strong> Netlify</p>
+            <div class="flex justify-between py-2 border-b border-dark-500">
+              <span class="text-gray-400">Version</span>
+              <span class="font-medium">3.0</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-dark-500">
+              <span class="text-gray-400">Backend</span>
+              <span class="font-medium">Firebase</span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span class="text-gray-400">Hosting</span>
+              <span class="font-medium">Netlify</span>
             </div>
           </div>
         </div>
       </div>
     </div>
-  </main>
+  </div>
 
   <script src="../js/db.js"></script>
   <script>
@@ -112,13 +163,18 @@
 
     document.addEventListener('DOMContentLoaded', async function() {
       await DB.init();
-      
       const stats = await DB.getStats();
       document.getElementById('statComics').textContent = stats.totalComics;
       document.getElementById('statChapters').textContent = stats.totalChapters;
       document.getElementById('statCategories').textContent = stats.totalCategories;
-      document.getElementById('statViews').textContent = UI.formatNumber(stats.totalViews);
+      document.getElementById('statViews').textContent = formatNumber(stats.totalViews);
     });
+
+    function formatNumber(num) {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+      return num.toString();
+    }
   </script>
 </body>
 </html>

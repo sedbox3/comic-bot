@@ -1,96 +1,151 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" data-theme="dark">
+<html lang="ar" dir="rtl" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إدارة الكوميكس - Sedbox Comics</title>
+  <title>Manage Comics - Sedbox Comics</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="../css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            dark: { 900: '#0f0f13', 800: '#13131a', 700: '#1a1a24', 600: '#22222e', 500: '#2a2a38' },
+            accent: { DEFAULT: '#7c3aed', light: '#8b5cf6', dark: '#6d28d9' },
+            golden: '#fbbf24'
+          },
+          fontFamily: { sans: ['Inter', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    .glass { background: rgba(26, 26, 36, 0.8); backdrop-filter: blur(12px); }
+    .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 64px); margin-top: 64px; }
+    @media (max-width: 1024px) { .admin-layout { grid-template-columns: 1fr; } .admin-sidebar { display: none; } }
+    .admin-sidebar { background: #13131a; border-left: 2px solid #22222e; padding: 1.5rem 0; position: sticky; top: 64px; height: calc(100vh - 64px); overflow-y: auto; }
+    .admin-sidebar .menu-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.875rem 1.5rem; color: #9ca3af; font-weight: 600; transition: all 0.2s; border-right: 3px solid transparent; }
+    .admin-sidebar .menu-item:hover, .admin-sidebar .menu-item.active { color: #7c3aed; background: rgba(124, 58, 237, 0.1); border-right-color: #7c3aed; }
+    .comic-card { transition: all 0.3s ease; }
+    .comic-card:hover { transform: translateY(-8px); }
+    .comic-card:hover .cover-img { transform: scale(1.1); }
+    .cover-img { transition: transform 0.5s ease; }
+  </style>
 </head>
-<body>
-  <nav class="navbar">
-    <a href="../index.html" class="navbar-brand">
-      <div class="logo-icon"><i class="fas fa-book-open"></i></div>
-      <span class="logo-text">Sedbox Comics</span>
-    </a>
-    <div class="navbar-actions">
-      <a href="../index.html" class="btn btn-secondary btn-sm"><i class="fas fa-home"></i> الموقع</a>
-      <button class="btn btn-danger btn-sm" onclick="DB.logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
+<body class="bg-dark-900 text-white font-sans min-h-screen">
+
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-dark-600">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <a href="../index.html" class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/30">
+          <i class="fas fa-book-open text-white text-lg"></i>
+        </div>
+        <span class="text-xl font-bold">Sed<span class="text-accent">box</span></span>
+      </a>
+      <div class="flex items-center gap-3">
+        <a href="../index.html" class="bg-dark-700 hover:bg-dark-600 text-white px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2">
+          <i class="fas fa-home"></i> Site
+        </a>
+        <button onclick="DB.logout()" class="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-4 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
     </div>
   </nav>
 
-  <main class="main-content">
-    <div class="admin-layout">
-      <aside class="admin-sidebar">
-        <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> الإحصائيات</a>
-        <a href="comics.html" class="menu-item active"><i class="fas fa-book"></i> الكوميكس</a>
-        <a href="chapters.html" class="menu-item"><i class="fas fa-list"></i> الفصول</a>
-        <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> التصنيفات</a>
-        <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> الإعدادات</a>
-      </aside>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+      <a href="comics.html" class="menu-item active"><i class="fas fa-book"></i> Comics</a>
+      <a href="chapters.html" class="menu-item"><i class="fas fa-list"></i> Chapters</a>
+      <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> Categories</a>
+      <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> Settings</a>
+    </aside>
 
-      <div class="admin-main">
-        <div class="section-header">
-          <h1 class="section-title">
-            <span class="icon"><i class="fas fa-book"></i></span>
-            إدارة الكوميكس
-          </h1>
-          <button class="btn btn-primary" onclick="showAddForm()">
-            <i class="fas fa-plus"></i> إضافة كوميكس
-          </button>
-        </div>
-
-        <div id="alertBox"></div>
-
-        <div id="addForm" style="display: none;">
-          <div class="admin-form" style="margin-bottom: 2rem;">
-            <h2 style="font-family: var(--font-comic); margin-bottom: 1.5rem; color: var(--accent);">
-              <i class="fas fa-plus-circle"></i> إضافة كوميكس جديد
-            </h2>
-            <form id="comicForm">
-              <div class="form-group">
-                <label>عنوان الكوميكس *</label>
-                <input type="text" id="comicTitle" placeholder="مثال: ون بيس" required>
-              </div>
-              <div class="form-group">
-                <label>التصنيف *</label>
-                <select id="comicCategory" required></select>
-              </div>
-              <div class="form-group">
-                <label>الوصف</label>
-                <textarea id="comicDesc" placeholder="وصف مختصر للكوميكس..."></textarea>
-              </div>
-              <div class="form-group">
-                <label>المؤلف</label>
-                <input type="text" id="comicAuthor" placeholder="اسم المؤلف">
-              </div>
-              <div class="form-group">
-                <label>الغلاف *</label>
-                <div class="drop-zone" id="coverDropZone">
-                  <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-                  <p>اسحب صورة الغلاف هنا أو انقر للاختيار</p>
-                  <input type="file" id="coverInput" accept="image/*" style="display: none;">
-                </div>
-                <div id="coverPreview" style="margin-top: 1rem;"></div>
-              </div>
-              <div style="display: flex; gap: 1rem;">
-                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> حفظ</button>
-                <button type="button" class="btn btn-secondary" onclick="hideAddForm()"><i class="fas fa-times"></i> إلغاء</button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <div id="comicsList"></div>
+    <!-- Main Content -->
+    <div class="p-6 lg:p-8">
+      <div class="flex items-center justify-between mb-8">
+        <h1 class="text-3xl font-bold flex items-center gap-3">
+          <span class="w-12 h-12 bg-accent/20 rounded-xl flex items-center justify-center">
+            <i class="fas fa-book text-accent text-xl"></i>
+          </span>
+          Manage Comics
+        </h1>
+        <button onclick="showAddForm()" class="bg-accent hover:bg-accent-dark text-white px-5 py-2.5 rounded-xl font-semibold transition flex items-center gap-2 shadow-lg shadow-accent/30">
+          <i class="fas fa-plus"></i> Add Comic
+        </button>
       </div>
+
+      <div id="alertBox"></div>
+
+      <!-- Add Form -->
+      <div id="addForm" class="hidden mb-8">
+        <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6 lg:p-8">
+          <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+            <i class="fas fa-plus-circle text-accent"></i> Add New Comic
+          </h2>
+          <form id="comicForm" class="space-y-5">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-2">Title *</label>
+                <input type="text" id="comicTitle" placeholder="e.g., One Piece" required
+                       class="w-full bg-dark-800 border-2 border-dark-500 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent transition">
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-2">Category *</label>
+                <select id="comicCategory" required
+                        class="w-full bg-dark-800 border-2 border-dark-500 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent transition">
+                  <option value="">Select Category</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-2">Author</label>
+                <input type="text" id="comicAuthor" placeholder="Author name"
+                       class="w-full bg-dark-800 border-2 border-dark-500 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent transition">
+              </div>
+              <div class="md:col-span-2">
+                <label class="block text-sm font-semibold text-gray-300 mb-2">Description</label>
+                <textarea id="comicDesc" rows="3" placeholder="Brief description..."
+                          class="w-full bg-dark-800 border-2 border-dark-500 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent transition resize-none"></textarea>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-semibold text-gray-300 mb-2">Cover Image *</label>
+              <div class="border-2 border-dashed border-dark-500 rounded-xl p-8 text-center cursor-pointer hover:border-accent transition" id="coverDropZone">
+                <i class="fas fa-cloud-upload-alt text-4xl text-gray-500 mb-3"></i>
+                <p class="text-gray-400">Click or drag to upload cover</p>
+                <input type="file" id="coverInput" accept="image/*" class="hidden">
+              </div>
+              <div id="coverPreview" class="mt-4"></div>
+            </div>
+            
+            <div class="flex gap-3">
+              <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition flex items-center gap-2">
+                <i class="fas fa-save"></i> Save Comic
+              </button>
+              <button type="button" onclick="hideAddForm()" class="bg-dark-600 hover:bg-dark-500 text-white px-6 py-3 rounded-xl font-semibold transition">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Comics Grid -->
+      <div id="comicsList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
     </div>
-  </main>
+  </div>
 
   <script src="../js/db.js"></script>
   <script>
@@ -105,13 +160,10 @@
       
       const categories = await DB.getCategories();
       const select = document.getElementById('comicCategory');
-      select.innerHTML = '<option value="">اختر التصنيف</option>' +
+      select.innerHTML = '<option value="">Select Category</option>' +
         categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
 
-      if (window.location.search.includes('action=add')) {
-        showAddForm();
-      }
-
+      if (window.location.search.includes('action=add')) showAddForm();
       loadComics();
     });
 
@@ -126,13 +178,22 @@
         const reader = new FileReader();
         reader.onload = function(ev) {
           document.getElementById('coverPreview').innerHTML = `
-            <div class="preview-item" style="max-width: 150px;">
-              <img src="${ev.target.result}" alt="غلاف">
+            <div class="relative w-32 h-44 rounded-xl overflow-hidden border-2 border-dark-500">
+              <img src="${ev.target.result}" alt="Cover" class="w-full h-full object-cover">
+              <button type="button" onclick="removeCover()" class="absolute top-2 left-2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-xs text-white">
+                <i class="fas fa-times"></i>
+              </button>
             </div>`;
         };
         reader.readAsDataURL(file);
       }
     });
+
+    function removeCover() {
+      coverFile = null;
+      document.getElementById('coverPreview').innerHTML = '';
+      document.getElementById('coverInput').value = '';
+    }
 
     document.getElementById('comicForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -142,7 +203,7 @@
       const author = document.getElementById('comicAuthor').value.trim();
 
       if (!title || !category) {
-        showAlert('يرجى ملء جميع الحقول المطلوبة', 'danger');
+        showAlert('Please fill all required fields', 'danger');
         return;
       }
 
@@ -151,19 +212,15 @@
         coverData = await DB.compressImage(coverFile, 1200, 1600, 0.92);
       }
 
-      const comicData = {
-        title, category, description, author,
-        cover: coverData || '',
-        views: 0, rating: 0
-      };
-
+      const comicData = { title, category, description, author, cover: coverData || '', views: 0, rating: 0 };
       const result = await DB.addComic(comicData);
+      
       if (result) {
-        showAlert('تم إضافة الكوميكس بنجاح!', 'success');
+        showAlert('Comic added successfully!', 'success');
         hideAddForm();
         loadComics();
       } else {
-        showAlert('حدث خطأ أثناء الحفظ', 'danger');
+        showAlert('Error saving comic', 'danger');
       }
     });
 
@@ -171,63 +228,68 @@
       const comics = await DB.getLatestComics(100);
       if (comics.length === 0) {
         document.getElementById('comicsList').innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon"><i class="fas fa-book-open"></i></div>
-            <h3>لا يوجد كوميكس بعد</h3>
-            <p>ابدأ بإضافة أول كوميكس.</p>
+          <div class="col-span-full text-center py-16">
+            <i class="fas fa-book-open text-5xl text-gray-600 mb-4"></i>
+            <h3 class="text-xl font-bold mb-2">No Comics Yet</h3>
+            <p class="text-gray-500">Start by adding your first comic.</p>
           </div>`;
         return;
       }
 
-      document.getElementById('comicsList').innerHTML = `
-        <div class="comics-grid">
-          ${comics.map(comic => `
-            <div class="comic-card fade-in">
-              <div class="cover">
-                <img src="${comic.cover || 'https://via.placeholder.com/300x400?text=No+Cover'}" alt="${comic.title}">
-                <div class="badge chapter-count">${comic.category || ''}</div>
-              </div>
-              <div class="card-info">
-                <div class="card-title">${comic.title}</div>
-                <div class="card-meta">
-                  <span class="card-views"><i class="fas fa-eye"></i> ${UI.formatNumber(comic.views || 0)}</span>
-                </div>
-                <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
-                  <button class="btn btn-danger btn-sm" onclick="deleteComic('${comic.id}', '${comic.title}')">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                </div>
+      document.getElementById('comicsList').innerHTML = comics.map(comic => `
+        <div class="comic-card bg-dark-700 rounded-xl overflow-hidden border border-dark-500 hover:border-accent/50 transition group">
+          <div class="relative aspect-[3/4] overflow-hidden">
+            <img src="${comic.cover || 'https://via.placeholder.com/300x400?text=No+Cover'}" alt="${comic.title}" class="cover-img w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition">
+              <div class="absolute bottom-3 left-3 right-3 flex gap-2">
+                <button onclick="deleteComic('${comic.id}', '${comic.title.replace(/'/g, "\\'")}')" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-sm font-medium transition">
+                  <i class="fas fa-trash"></i>
+                </button>
               </div>
             </div>
-          `).join('')}
-        </div>`;
+            <div class="absolute top-2 right-2 bg-accent/90 backdrop-blur px-2 py-0.5 rounded-md text-xs font-bold">
+              ${comic.category || ''}
+            </div>
+          </div>
+          <div class="p-3">
+            <h4 class="font-semibold text-sm line-clamp-1">${comic.title}</h4>
+            <div class="text-gray-500 text-xs mt-1"><i class="fas fa-eye"></i> ${formatNumber(comic.views || 0)}</div>
+          </div>
+        </div>
+      `).join('');
     }
 
     function showAddForm() {
-      document.getElementById('addForm').style.display = 'block';
+      document.getElementById('addForm').classList.remove('hidden');
       document.getElementById('addForm').scrollIntoView({ behavior: 'smooth' });
     }
 
     function hideAddForm() {
-      document.getElementById('addForm').style.display = 'none';
+      document.getElementById('addForm').classList.add('hidden');
       document.getElementById('comicForm').reset();
-      document.getElementById('coverPreview').innerHTML = '';
-      coverFile = null;
+      removeCover();
     }
 
     async function deleteComic(id, title) {
-      if (confirm(`هل أنت متأكد من حذف "${title}"؟`)) {
+      if (confirm(`Delete "${title}"?`)) {
         const result = await DB.deleteComic(id);
         if (result) {
-          showAlert('تم الحذف بنجاح', 'success');
+          showAlert('Deleted successfully', 'success');
           loadComics();
         }
       }
     }
 
     function showAlert(msg, type) {
-      document.getElementById('alertBox').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+      document.getElementById('alertBox').innerHTML = `
+        <div class="${type === 'success' ? 'bg-green-500/20 border-green-500/50 text-green-400' : 'bg-red-500/20 border-red-500/50 text-red-400'} border px-4 py-3 rounded-xl text-sm font-medium mb-4">${msg}</div>`;
       setTimeout(() => { document.getElementById('alertBox').innerHTML = ''; }, 3000);
+    }
+
+    function formatNumber(num) {
+      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+      return num.toString();
     }
   </script>
 </body>
