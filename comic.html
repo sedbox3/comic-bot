@@ -3,24 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تفاصيل الكوميكس - كوميكس عربية</title>
+  <title>تفاصيل الكوميكس - Sedbox Comics</title>
+  <meta name="description" content="تفاصيل القصة المصورة والفصل المتاحة للقراءة">
+  <meta name="robots" content="index, follow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
-  
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <nav class="navbar">
     <a href="index.html" class="navbar-brand">
-      <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent); width:32px; height:32px;">
-        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-      </svg>
-      كوميكس عربية
+      <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+      <span class="logo-text">Sedbox Comics</span>
     </a>
     <div class="navbar-links" id="navLinks">
       <a href="index.html">الرئيسية</a>
@@ -29,148 +27,145 @@
       <a href="browse.html?filter=latest">أحدث الإضافات</a>
     </div>
     <div class="navbar-actions">
-      <button class="theme-toggle" onclick="UI.toggleTheme()" title="تبديل الثيم">
-        <i class="fas fa-sun"></i>
-      </button>
-      <button class="mobile-menu-btn" onclick="UI.toggleMobileMenu()">
-        <i class="fas fa-bars"></i>
-      </button>
+      <button class="theme-toggle" onclick="UI.toggleTheme()"><i class="fas fa-sun"></i></button>
+      <button class="mobile-menu-btn" onclick="UI.toggleMobileMenu()"><i class="fas fa-bars"></i></button>
     </div>
   </nav>
 
   <main class="main-content">
-    <div id="comicContent"></div>
+    <div class="comic-detail" id="comicDetail">
+      <div class="cover-section" id="coverSection"></div>
+      <div class="info-section" id="infoSection">
+        <div class="loader"><div class="spinner"></div></div>
+      </div>
+    </div>
   </main>
 
   <footer class="footer">
     <div class="footer-bottom">
-      <p>© 2026 كوميكس عربية. جميع الحقوق محفوظة.</p>
+      <p>© 2026 Sedbox Comics. جميع الحقوق محفوظة.</p>
     </div>
   </footer>
 
   <script src="js/db.js"></script>
   <script src="js/ui.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', async function() {
-      // تهيئة Firebase
-      await DB.init();
-      
-      const comicId = parseInt(UI.getUrlParam('id'));
-      
-      if (!comicId) {
-        window.location.href = 'browse.html';
-        return;
-      }
+    let currentComic = null;
 
-      const comic = await DB.getComic(comicId);
-      if (!comic) {
-        document.getElementById('comicContent').innerHTML = `
-          <div class="empty-state" style="padding-top: 100px;">
+    document.addEventListener('DOMContentLoaded', async function() {
+      await DB.init();
+      UI.loadTheme();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const comicId = urlParams.get('id');
+
+      if (!comicId) {
+        document.getElementById('infoSection').innerHTML = `
+          <div class="empty-state">
             <div class="empty-icon"><i class="fas fa-exclamation-triangle"></i></div>
-            <h3>الكوميكس غير موجود</h3>
-            <p>لم يتم العثور على هذا الكوميكس.</p>
-            <a href="browse.html" class="btn btn-primary" style="margin-top: 1rem;">تصفح الكوميكس</a>
+            <h3>لم يتم العثور على الكوميكس</h3>
+            <a href="browse.html" class="btn btn-primary"><i class="fas fa-arrow-right"></i> تصفح الكوميكس</a>
           </div>`;
         return;
       }
 
-      // زيادة المشاهدات
-      await DB.incrementViews(comicId);
+      const comic = await DB.getComicById(comicId);
+      if (!comic) {
+        document.getElementById('infoSection').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <h3>لم يتم العثور على الكوميكس</h3>
+            <a href="browse.html" class="btn btn-primary"><i class="fas fa-arrow-right"></i> تصفح الكوميكس</a>
+          </div>`;
+        return;
+      }
+
+      currentComic = comic;
+      DB.updateViews(comicId);
+
+      document.title = `${comic.title} - Sedbox Comics`;
 
       const chapters = await DB.getChapters(comicId);
 
-      document.getElementById('comicContent').innerHTML = `
-        <div class="comic-detail fade-in">
-          <div class="cover-section">
-            <img src="${comic.cover}" alt="${comic.title}">
-            <div style="margin-top: 1rem; text-align: center;">
-              ${UI.renderStarRating(comicId, comic.rating)}
-              <div style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
-                ${comic.rating ? comic.rating.toFixed(1) : '0.0'} (${comic.ratingCount || 0} تقييم)
-              </div>
-            </div>
-          </div>
-          
-          <div class="info-section">
-            <h1>${comic.title}</h1>
-            
-            <div class="meta-row">
-              <span class="meta-item">
-                <i class="fas fa-folder" style="color: var(--accent);"></i>
-                ${comic.category}
-              </span>
-              <span class="meta-item">
-                <i class="fas fa-eye" style="color: var(--accent2);"></i>
-                ${UI.formatNumber(comic.views || 0)} مشاهدة
-              </span>
-              <span class="meta-item">
-                <i class="fas fa-book" style="color: var(--accent3);"></i>
-                ${chapters.length} فصل
-              </span>
-              <span class="meta-item">
-                <i class="fas fa-calendar" style="color: var(--text-secondary);"></i>
-                ${new Date(comic.createdAt).toLocaleDateString('ar-SA')}
-              </span>
-            </div>
-            
-            <p class="description">${comic.description}</p>
-            
-            <div class="action-buttons">
-              ${chapters.length > 0 ? `
-                <a href="reader.html?id=${comicId}&chapter=1" class="btn btn-primary">
-                  <i class="fas fa-play"></i> ابدأ القراءة
-                </a>
-              ` : `
-                <button class="btn btn-secondary" disabled>
-                  <i class="fas fa-clock"></i> قريباً
-                </button>
-              `}
-              <button class="btn btn-secondary" onclick="shareComic(${comicId})">
-                <i class="fas fa-share-alt"></i> مشاركة
-              </button>
-            </div>
-            
-            <!-- الفصول -->
-            <div class="chapters-list">
-              <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem;">
-                <i class="fas fa-list" style="color: var(--accent);"></i>
-                قائمة الفصول (${chapters.length})
-              </h2>
-              ${chapters.length > 0 ? chapters.map(ch => `
-                <a href="reader.html?id=${comicId}&chapter=${ch.number}" class="chapter-item slide-in">
-                  <div>
-                    <div class="chapter-title">
-                      <i class="fas fa-book-open" style="margin-left: 0.5rem; color: var(--accent);"></i>
-                      الفصل ${ch.number}: ${ch.title}
-                    </div>
-                    <div class="chapter-meta">
-                      ${ch.images.length} صفحة • ${new Date(ch.createdAt).toLocaleDateString('ar-SA')}
-                    </div>
-                  </div>
-                  <i class="fas fa-arrow-left" style="color: var(--accent);"></i>
-                </a>
-              `).join('') : `
-                <div class="empty-state">
-                  <p>لم يتم نشر أي فصول بعد.</p>
-                </div>
-              `}
-            </div>
-          </div>
-        </div>
+      document.getElementById('coverSection').innerHTML = `
+        <img src="${comic.cover}" alt="${comic.title}">
       `;
 
-      UI.loadTheme();
-    });
+      document.getElementById('infoSection').innerHTML = `
+        <h1>${comic.title}</h1>
+        
+        <div class="meta-row">
+          <div class="meta-item">
+            <i class="fas fa-folder" style="color: var(--accent);"></i>
+            ${comic.category || 'غير محدد'}
+          </div>
+          <div class="meta-item">
+            <i class="fas fa-eye" style="color: var(--accent2);"></i>
+            ${UI.formatNumber(comic.views || 0)} مشاهدة
+          </div>
+          <div class="meta-item">
+            <i class="fas fa-star" style="color: var(--accent3);"></i>
+            ${comic.rating || '0'}
+          </div>
+          <div class="meta-item">
+            <i class="fas fa-book" style="color: var(--accent4);"></i>
+            ${chapters.length} فصل
+          </div>
+        </div>
 
-    function shareComic(id) {
-      const url = window.location.href;
-      if (navigator.share) {
-        navigator.share({ title: 'كوميكس عربية', url: url });
-      } else {
-        navigator.clipboard.writeText(url);
-        UI.showAlert('تم نسخ الرابط!', 'success');
-      }
-    }
+        ${comic.description ? `
+          <div class="description">
+            <p>${comic.description}</p>
+          </div>
+        ` : ''}
+
+        ${comic.author ? `
+          <div class="meta-row">
+            <div class="meta-item">
+              <i class="fas fa-user-pen" style="color: var(--accent5);"></i>
+              ${comic.author}
+            </div>
+          </div>
+        ` : ''}
+
+        <div class="action-buttons">
+          ${chapters.length > 0 ? `
+            <a href="reader.html?comic=${comicId}&chapter=${chapters[0].id}" class="btn btn-primary">
+              <i class="fas fa-play"></i> ابدأ القراءة
+            </a>
+          ` : ''}
+          <a href="browse.html?category=${comic.category}" class="btn btn-secondary">
+            <i class="fas fa-folder"></i> ${comic.category}
+          </a>
+        </div>
+
+        <div class="chapters-list">
+          <h2 class="section-title" style="font-size: 1.5rem; margin-bottom: 1rem;">
+            <span class="icon"><i class="fas fa-list"></i></span>
+            الفصول (${chapters.length})
+          </h2>
+          ${chapters.length === 0 ? `
+            <div class="empty-state">
+              <div class="empty-icon"><i class="fas fa-book-open"></i></div>
+              <h3>لا توجد فصول بعد</h3>
+              <p>لم يتم إضافة أي فصل لهذا الكوميكس.</p>
+            </div>
+          ` : chapters.map((ch, index) => `
+            <a href="reader.html?comic=${comicId}&chapter=${ch.id}" class="chapter-item slide-in" style="animation-delay: ${index * 0.05}s">
+              <div>
+                <div class="chapter-title">الفصل ${ch.number || index + 1}: ${ch.title}</div>
+                <div class="chapter-meta">
+                  <i class="fas fa-image"></i> ${ch.images ? ch.images.length : 0} صفحة
+                </div>
+              </div>
+              <div style="color: var(--accent); font-size: 1.2rem;">
+                <i class="fas fa-arrow-left"></i>
+              </div>
+            </a>
+          `).join('')}
+        </div>
+      `;
+    });
   </script>
 </body>
 </html>

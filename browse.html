@@ -3,24 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تصفح الكوميكس - كوميكس عربية</title>
+  <title>تصفح - Sedbox Comics</title>
+  <meta name="description" content="تصفح جميع القصص المصورة العربية المتاحة في مكتبة Sedbox Comics">
+  <meta name="robots" content="index, follow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
-  
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <nav class="navbar">
     <a href="index.html" class="navbar-brand">
-      <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent); width:32px; height:32px;">
-        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-      </svg>
-      كوميكس عربية
+      <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+      <span class="logo-text">Sedbox Comics</span>
     </a>
     <div class="navbar-links" id="navLinks">
       <a href="index.html">الرئيسية</a>
@@ -30,41 +28,34 @@
     </div>
     <div class="navbar-actions">
       <div class="search-box">
-        <input type="text" id="searchInput" placeholder="ابحث عن كوميكس..."
-               onkeypress="if(event.key==='Enter') UI.doSearch(this.value)">
+        <input type="text" id="searchInput" placeholder="ابحث..." onkeypress="if(event.key==='Enter') UI.doSearch(this.value)">
         <span class="search-icon"><i class="fas fa-search"></i></span>
       </div>
-      <button class="theme-toggle" onclick="UI.toggleTheme()" title="تبديل الثيم">
-        <i class="fas fa-sun"></i>
-      </button>
-      <button class="mobile-menu-btn" onclick="UI.toggleMobileMenu()">
-        <i class="fas fa-bars"></i>
-      </button>
+      <button class="theme-toggle" onclick="UI.toggleTheme()"><i class="fas fa-sun"></i></button>
+      <button class="mobile-menu-btn" onclick="UI.toggleMobileMenu()"><i class="fas fa-bars"></i></button>
     </div>
   </nav>
 
   <main class="main-content">
     <section class="section">
-      <!-- عنوان الصفحة -->
-      <div id="pageTitle" class="section-header" style="margin-bottom: 1rem;"></div>
-      
-      <!-- شريط التصنيفات -->
-      <div id="categoriesBar"></div>
-      
-      <!-- معلومات البحث -->
-      <div id="searchInfo" class="search-results-info"></div>
-      
-      <!-- شبكة الكوميكس -->
-      <div id="comicsGrid"></div>
-      
-      <!-- ترقيم الصفحات -->
-      <div id="pagination" class="pagination"></div>
+      <div class="section-header">
+        <h2 class="section-title" id="pageTitle">
+          <span class="icon"><i class="fas fa-th"></i></span>
+          تصفح جميع الكوميكس
+        </h2>
+      </div>
+
+      <div id="categoriesBar" class="categories-bar"></div>
+
+      <div id="comicsList"></div>
+
+      <div class="pagination" id="pagination"></div>
     </section>
   </main>
 
   <footer class="footer">
     <div class="footer-bottom">
-      <p>© 2026 كوميكس عربية. جميع الحقوق محفوظة.</p>
+      <p>© 2026 Sedbox Comics. جميع الحقوق محفوظة.</p>
     </div>
   </footer>
 
@@ -73,87 +64,104 @@
   <script>
     let currentPage = 1;
     const ITEMS_PER_PAGE = 12;
-    let currentComics = [];
+    let allComics = [];
 
     document.addEventListener('DOMContentLoaded', async function() {
-      // تهيئة Firebase
       await DB.init();
-      
-      const searchQuery = UI.getUrlParam('search');
-      const category = UI.getUrlParam('category');
-      const filter = UI.getUrlParam('filter');
-      const page = parseInt(UI.getUrlParam('page')) || 1;
-      currentPage = page;
-
-      // عنوان الصفحة
-      let title = 'تصفح جميع الكوميكس';
-      let icon = 'fa-book-open';
-      
-      if (searchQuery) {
-        title = `نتائج البحث: "${searchQuery}"`;
-        icon = 'fa-search';
-      } else if (category) {
-        title = `التصنيف: ${category}`;
-        icon = 'fa-folder';
-      } else if (filter === 'popular') {
-        title = 'الأكثر قراءة';
-        icon = 'fa-fire';
-      } else if (filter === 'latest') {
-        title = 'أحدث الإضافات';
-        icon = 'fa-clock';
-      }
-
-      document.getElementById('pageTitle').innerHTML = `
-        <h2 class="section-title"><i class="fas ${icon}"></i> ${title}</h2>
-      `;
-
-      // تحميل التصنيفات
-      document.getElementById('categoriesBar').innerHTML = await UI.renderCategoriesBar(category);
-
-      // تحميل الكوميكس
-      await loadComics(searchQuery, category, filter);
       UI.loadTheme();
-    });
 
-    async function loadComics(search, category, filter) {
-      let comics = [];
+      const urlParams = new URLSearchParams(window.location.search);
+      const filter = urlParams.get('filter');
+      const category = urlParams.get('category');
+      const search = urlParams.get('search');
 
-      if (search) {
-        comics = await DB.searchComics(search);
-        document.getElementById('searchInfo').innerHTML = 
-          `<p>تم العثور على <strong>${comics.length}</strong> نتيجة</p>`;
-      } else if (category) {
-        comics = await DB.getComicsByCategory(category);
-      } else if (filter === 'popular') {
-        comics = await DB.getMostViewedComics(100);
+      if (filter === 'popular') {
+        document.getElementById('pageTitle').innerHTML = `<span class="icon"><i class="fas fa-fire"></i></span> الأكثر قراءة`;
       } else if (filter === 'latest') {
-        comics = await DB.getLatestComics(100);
-      } else {
-        comics = await DB.getComics();
+        document.getElementById('pageTitle').innerHTML = `<span class="icon"><i class="fas fa-bolt"></i></span> أحدث الإضافات`;
+      } else if (category) {
+        document.getElementById('pageTitle').innerHTML = `<span class="icon"><i class="fas fa-folder"></i></span> ${category}`;
+      } else if (search) {
+        document.getElementById('pageTitle').innerHTML = `<span class="icon"><i class="fas fa-search"></i></span> نتائج البحث: "${search}"`;
+        document.getElementById('searchInput').value = search;
       }
 
-      // تصفية المنشورة فقط
-      comics = comics.filter(c => c.status === 'published');
-      currentComics = comics;
+      const categories = await DB.getCategories();
+      const activeCategory = category || '';
+      document.getElementById('categoriesBar').innerHTML = 
+        `<button class="category-chip ${!activeCategory ? 'active' : ''}" onclick="filterByCategory('')">الكل</button>` +
+        categories.map(cat => `
+          <button class="category-chip ${activeCategory === cat.name ? 'active' : ''}" onclick="filterByCategory('${cat.name}')">
+            ${cat.name}
+          </button>
+        `).join('');
+
+      if (filter === 'popular') {
+        allComics = await DB.getMostViewedComics(100);
+      } else if (filter === 'latest') {
+        allComics = await DB.getLatestComics(100);
+      } else if (search) {
+        allComics = await DB.searchComics(search);
+      } else {
+        allComics = await DB.getLatestComics(100);
+      }
+
+      if (activeCategory) {
+        allComics = allComics.filter(c => c.category === activeCategory);
+      }
 
       renderPage();
+    });
+
+    function filterByCategory(category) {
+      const url = new URL(window.location);
+      if (category) {
+        url.searchParams.set('category', category);
+      } else {
+        url.searchParams.delete('category');
+      }
+      window.location = url;
     }
 
-    async function renderPage() {
-      const totalPages = Math.ceil(currentComics.length / ITEMS_PER_PAGE);
+    function renderPage() {
       const start = (currentPage - 1) * ITEMS_PER_PAGE;
-      const pageComics = currentComics.slice(start, start + ITEMS_PER_PAGE);
+      const end = start + ITEMS_PER_PAGE;
+      const pageComics = allComics.slice(start, end);
 
-      document.getElementById('comicsGrid').innerHTML = await UI.renderComicsGrid(pageComics);
+      if (pageComics.length === 0) {
+        document.getElementById('comicsList').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon"><i class="fas fa-search"></i></div>
+            <h3>لم يتم العثور على نتائج</h3>
+            <p>جرّب البحث بكلمات مختلفة أو تصفح جميع الكوميكس.</p>
+          </div>`;
+        document.getElementById('pagination').innerHTML = '';
+        return;
+      }
 
-      // الترقيم
+      UI.renderComicsGrid(pageComics).then(html => {
+        document.getElementById('comicsList').innerHTML = html;
+      });
+
+      const totalPages = Math.ceil(allComics.length / ITEMS_PER_PAGE);
       if (totalPages > 1) {
-        let paginationHTML = '';
-        for (let i = 1; i <= totalPages; i++) {
-          paginationHTML += `<button class="${i === currentPage ? 'active' : ''}" 
-                              onclick="goToPage(${i})">${i}</button>`;
+        let paginationHtml = '';
+        if (currentPage > 1) {
+          paginationHtml += `<button onclick="goToPage(${currentPage - 1})"><i class="fas fa-arrow-right"></i></button>`;
         }
-        document.getElementById('pagination').innerHTML = paginationHTML;
+        for (let i = 1; i <= totalPages; i++) {
+          if (i === currentPage) {
+            paginationHtml += `<button class="active">${i}</button>`;
+          } else if (Math.abs(i - currentPage) <= 2 || i === 1 || i === totalPages) {
+            paginationHtml += `<button onclick="goToPage(${i})">${i}</button>`;
+          } else if (Math.abs(i - currentPage) === 3) {
+            paginationHtml += `<button disabled>...</button>`;
+          }
+        }
+        if (currentPage < totalPages) {
+          paginationHtml += `<button onclick="goToPage(${currentPage + 1})"><i class="fas fa-arrow-left"></i></button>`;
+        }
+        document.getElementById('pagination').innerHTML = paginationHtml;
       } else {
         document.getElementById('pagination').innerHTML = '';
       }

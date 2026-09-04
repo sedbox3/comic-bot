@@ -7,21 +7,16 @@
   <meta name="description" content="استمتع بآلاف القصص المصورة العربية بجودة عالية. قراءة مجانية بدون إعلانات.">
   <meta name="keywords" content="كوميكس, قصص مصورة, مانجا عربية, كرتون, قراءة مجانية, كوميك عربي">
   <meta name="robots" content="index, follow">
-  
-  <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://sedbox3.netlify.app/">
   <meta property="og:title" content="Sedbox Comics - أكبر مكتبة كوميكس عربية">
   <meta property="og:description" content="استمتع بآلاف القصص المصورة العربية بجودة عالية. قراءة مجانية بدون إعلانات.">
-  
   <link rel="canonical" href="https://sedbox3.netlify.app/">
-  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
-  
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
@@ -31,26 +26,19 @@
       <div class="logo-icon"><i class="fas fa-book-open"></i></div>
       <span class="logo-text">Sedbox Comics</span>
     </a>
-    
     <div class="navbar-links" id="navLinks">
       <a href="index.html" class="active">الرئيسية</a>
       <a href="browse.html">تصفح</a>
       <a href="browse.html?filter=popular">الأكثر قراءة</a>
       <a href="browse.html?filter=latest">أحدث الإضافات</a>
     </div>
-    
     <div class="navbar-actions">
       <div class="search-box">
-        <input type="text" id="searchInput" placeholder="ابحث عن كوميكس..." 
-               onkeypress="if(event.key==='Enter') UI.doSearch(this.value)">
+        <input type="text" id="searchInput" placeholder="ابحث..." onkeypress="if(event.key==='Enter') UI.doSearch(this.value)">
         <span class="search-icon"><i class="fas fa-search"></i></span>
       </div>
-      <button class="theme-toggle" onclick="UI.toggleTheme()">
-        <i class="fas fa-sun"></i>
-      </button>
-      <button class="mobile-menu-btn" onclick="UI.toggleMobileMenu()">
-        <i class="fas fa-bars"></i>
-      </button>
+      <button class="theme-toggle" onclick="UI.toggleTheme()"><i class="fas fa-sun"></i></button>
+      <button class="mobile-menu-btn" onclick="UI.toggleMobileMenu()"><i class="fas fa-bars"></i></button>
     </div>
   </nav>
 
@@ -61,8 +49,7 @@
         <h1>اكتشف عالماً من <span>القصص المصورة</span></h1>
         <p>آلاف الكوميكس بجودة عالية، مجاناً وبدون إعلانات. اقرأ الآن وانغمس في المغامرات.</p>
         <div class="hero-search">
-          <input type="text" id="heroSearch" placeholder="ابحث عن قصة مفضلة..."
-                 onkeypress="if(event.key==='Enter') UI.doSearch(this.value)">
+          <input type="text" id="heroSearch" placeholder="ابحث عن قصة مفضلة..." onkeypress="if(event.key==='Enter') UI.doSearch(this.value)">
           <button class="btn btn-primary" onclick="UI.doSearch(document.getElementById('heroSearch').value)">
             <i class="fas fa-search"></i> بحث
           </button>
@@ -77,9 +64,7 @@
           <span class="icon"><i class="fas fa-bolt"></i></span>
           أحدث الإصدارات
         </h2>
-        <a href="browse.html?filter=latest" class="section-link">
-          عرض الكل <i class="fas fa-arrow-left"></i>
-        </a>
+        <a href="browse.html?filter=latest" class="section-link">عرض الكل <i class="fas fa-arrow-left"></i></a>
       </div>
       <div id="latestComics"></div>
     </section>
@@ -90,9 +75,7 @@
           <span class="icon"><i class="fas fa-fire"></i></span>
           الأكثر قراءة
         </h2>
-        <a href="browse.html?filter=popular" class="section-link">
-          عرض الكل <i class="fas fa-arrow-left"></i>
-        </a>
+        <a href="browse.html?filter=popular" class="section-link">عرض الكل <i class="fas fa-arrow-left"></i></a>
       </div>
       <div id="popularComics"></div>
     </section>
@@ -104,7 +87,7 @@
           تصفح حسب التصنيف
         </h2>
       </div>
-      <div id="categoriesList"></div>
+      <div id="categoriesList" class="categories-bar"></div>
     </section>
   </main>
 
@@ -112,9 +95,7 @@
     <div class="footer-content">
       <div class="footer-section">
         <h3>Sedbox Comics</h3>
-        <p style="color: var(--text-secondary); line-height: 1.8;">
-          أكبر مكتبة كوميكس عربية مجانية. استمتع بآلاف القصص المصورة بجودة عالية.
-        </p>
+        <p style="color: var(--text-secondary); line-height: 1.8;">أكبر مكتبة كوميكس عربية مجانية. استمتع بآلاف القصص المصورة بجودة عالية.</p>
       </div>
       <div class="footer-section">
         <h3>روابط سريعة</h3>
@@ -143,7 +124,6 @@
     document.addEventListener('DOMContentLoaded', async function() {
       await DB.init();
       
-      // إحصائيات البطل
       const stats = await DB.getStats();
       document.getElementById('heroStats').innerHTML = `
         <div class="hero-stat">
@@ -160,20 +140,19 @@
         </div>
       `;
       
-      // أحدث الإصدارات
       const latest = await DB.getLatestComics(8);
       if (latest.length === 0) {
         document.getElementById('latestComics').innerHTML = `
           <div class="empty-state">
             <div class="empty-icon"><i class="fas fa-book-open"></i></div>
-            <h3>مرحباً بك في Sedbox Comics!</h3>
+            <div class="speech-bubble">!مرحباً بك</div>
+            <h3 style="margin-top: 2rem;">ابدأ رحلتك مع Sedbox Comics!</h3>
             <p>لم يتم إضافة أي كوميكس بعد. ابدأ بإضافة أول كوميكس من <a href="admin/login.html" style="color: var(--accent);">لوحة التحكم</a></p>
           </div>`;
       } else {
         document.getElementById('latestComics').innerHTML = await UI.renderComicsGrid(latest);
       }
       
-      // الأكثر قراءة
       const popular = await DB.getMostViewedComics(8);
       if (popular.length > 0) {
         document.getElementById('popularComics').innerHTML = await UI.renderComicsGrid(popular);
@@ -186,26 +165,10 @@
           </div>`;
       }
       
-      // التصنيفات
       const categories = await DB.getCategories();
       document.getElementById('categoriesList').innerHTML = categories.map(cat => `
-        <a href="browse.html?category=${cat.name}" style="
-          display: inline-flex;
-          align-items: center;
-          gap: 12px;
-          padding: 1.2rem 2rem;
-          background: var(--bg-card);
-          border: 2px solid var(--border);
-          border-radius: var(--radius);
-          margin: 0.5rem;
-          transition: all 0.3s ease;
-          color: var(--text-primary);
-        " onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='translateY(-5px)'"
-           onmouseout="this.style.borderColor='var(--border)'; this.style.transform='none'">
-          <i class="fas fa-folder" style="color: var(--accent); font-size: 1.3rem;"></i>
-          <div>
-            <div style="font-weight: 700;">${cat.name}</div>
-          </div>
+        <a href="browse.html?category=${cat.name}" class="category-chip">
+          <i class="fas fa-folder"></i> ${cat.name}
         </a>
       `).join('');
 

@@ -3,134 +3,105 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>الإعدادات - لوحة التحكم</title>
+  <title>الإعدادات - Sedbox Comics</title>
+  <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css">
-  
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <nav class="navbar">
     <a href="../index.html" class="navbar-brand">
-      <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent); width:32px; height:32px;">
-        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-      </svg>
-      لوحة التحكم
+      <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+      <span class="logo-text">Sedbox Comics</span>
     </a>
     <div class="navbar-actions">
-      <a href="../index.html" class="btn btn-sm btn-secondary">
-        <i class="fas fa-external-link-alt"></i> زيارة الموقع
-      </a>
-      <button class="btn btn-sm btn-danger" onclick="handleLogout()">
-        <i class="fas fa-sign-out-alt"></i> خروج
-      </button>
+      <a href="../index.html" class="btn btn-secondary btn-sm"><i class="fas fa-home"></i> الموقع</a>
+      <button class="btn btn-danger btn-sm" onclick="DB.logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
     </div>
   </nav>
 
   <main class="main-content">
     <div class="admin-layout">
       <aside class="admin-sidebar">
-        <div class="sidebar-menu">
-          <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> الإحصائيات</a>
-          <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> الكوميكس</a>
-          <a href="chapters.html" class="menu-item"><i class="fas fa-book-open"></i> الفصول</a>
-          <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> التصنيفات</a>
-          <a href="settings.html" class="menu-item active"><i class="fas fa-cog"></i> الإعدادات</a>
-        </div>
+        <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> الإحصائيات</a>
+        <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> الكوميكس</a>
+        <a href="chapters.html" class="menu-item"><i class="fas fa-list"></i> الفصول</a>
+        <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> التصنيفات</a>
+        <a href="settings.html" class="menu-item active"><i class="fas fa-cog"></i> الإعدادات</a>
       </aside>
 
       <div class="admin-main">
-        <h1 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 2rem;">
-          <i class="fas fa-cog" style="color: var(--accent);"></i>
-          إعدادات الموقع
+        <h1 class="section-title" style="margin-bottom: 2rem;">
+          <span class="icon"><i class="fas fa-cog"></i></span>
+          الإعدادات
         </h1>
 
         <div id="alertBox"></div>
 
-        <!-- إعدادات عامة -->
-        <div class="admin-form" style="margin-bottom: 2rem;">
-          <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem;">
-            <i class="fas fa-globe" style="color: var(--accent);"></i>
-            الإعدادات العامة
-          </h3>
-          
-          <form onsubmit="saveSettings(event)">
-            <div class="form-group">
-              <label>اسم الموقع</label>
-              <input type="text" id="siteName" placeholder="كوميكس عربية">
-            </div>
-            
-            <div class="form-group">
-              <label>وصف الموقع</label>
-              <textarea id="siteDesc" placeholder="أكبر مكتبة كوميكس عربية"></textarea>
-            </div>
-            
-            <div class="form-group">
-              <label>عدد العناصر في الصفحة</label>
-              <input type="number" id="itemsPerPage" min="4" max="50" value="20">
-            </div>
-            
-            <button type="submit" class="btn btn-primary">
-              <i class="fas fa-save"></i> حفظ الإعدادات
-            </button>
-          </form>
-        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 2rem;">
+          <div class="comic-panel" style="padding: 2rem;">
+            <h2 style="font-family: var(--font-comic); margin-bottom: 1.5rem; color: var(--accent);">
+              <i class="fas fa-lock"></i> تغيير كلمة المرور
+            </h2>
+            <form id="passwordForm">
+              <div class="form-group">
+                <label>كلمة المرور الحالية</label>
+                <input type="password" id="currentPassword" required>
+              </div>
+              <div class="form-group">
+                <label>كلمة المرور الجديدة</label>
+                <input type="password" id="newPassword" minlength="4" required>
+              </div>
+              <div class="form-group">
+                <label>تأكيد كلمة المرور</label>
+                <input type="password" id="confirmPassword" minlength="4" required>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> حفظ التغييرات
+              </button>
+            </form>
+          </div>
 
-        <!-- تغيير كلمة المرور -->
-        <div class="admin-form" style="margin-bottom: 2rem;">
-          <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem;">
-            <i class="fas fa-lock" style="color: var(--accent);"></i>
-            تغيير كلمة المرور
-          </h3>
-          
-          <form onsubmit="changePassword(event)">
-            <div class="form-group">
-              <label>كلمة المرور الحالية *</label>
-              <input type="password" id="currentPass" required>
-            </div>
-            
-            <div class="form-group">
-              <label>كلمة المرور الجديدة *</label>
-              <input type="password" id="newPass" required minlength="6">
-            </div>
-            
-            <div class="form-group">
-              <label>تأكيد كلمة المرور الجديدة *</label>
-              <input type="password" id="confirmPass" required>
-            </div>
-            
-            <button type="submit" class="btn btn-primary">
-              <i class="fas fa-key"></i> تغيير كلمة المرور
-            </button>
-          </form>
-        </div>
-
-        <!-- تصدير البيانات -->
-        <div class="admin-form">
-          <h3 style="margin-bottom: 1.5rem; font-size: 1.2rem;">
-            <i class="fas fa-download" style="color: var(--accent);"></i>
-            إدارة البيانات
-          </h3>
-          
-          <p style="color: var(--text-secondary); margin-bottom: 1rem;">
-            يمكنك تصدير جميع البيانات كملف نسخ احتياطي أو استيرادها.
-          </p>
-          
-          <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-            <button class="btn btn-primary" onclick="exportData()">
+          <div class="comic-panel" style="padding: 2rem;">
+            <h2 style="font-family: var(--font-comic); margin-bottom: 1.5rem; color: var(--accent2);">
               <i class="fas fa-download"></i> تصدير البيانات
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+              تصدير جميع بيانات الموقع كملف JSON للنسخ الاحتياطي.
+            </p>
+            <button class="btn btn-success" onclick="exportData()">
+              <i class="fas fa-download"></i> تصدير JSON
             </button>
-            <label class="btn btn-secondary" style="cursor: pointer;">
+          </div>
+
+          <div class="comic-panel" style="padding: 2rem;">
+            <h2 style="font-family: var(--font-comic); margin-bottom: 1.5rem; color: var(--accent3);">
               <i class="fas fa-upload"></i> استيراد البيانات
-              <input type="file" accept=".json" style="display: none;" onchange="importData(this.files[0])">
-            </label>
-            <button class="btn btn-danger" onclick="resetData()">
-              <i class="fas fa-redo"></i> إعادة تعيين البيانات
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+              استيراد بيانات من ملف JSON مُصدَّر سابقاً.
+            </p>
+            <div class="drop-zone" id="importDropZone" style="padding: 2rem;">
+              <div class="drop-icon"><i class="fas fa-file-import"></i></div>
+              <p>اسحب ملف JSON هنا</p>
+              <input type="file" id="importInput" accept=".json" style="display: none;">
+            </div>
+          </div>
+
+          <div class="comic-panel" style="padding: 2rem;">
+            <h2 style="font-family: var(--font-comic); margin-bottom: 1.5rem; color: var(--danger);">
+              <i class="fas fa-exclamation-triangle"></i> خطر
+            </h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+              مسح جميع البيانات نهائياً. لا يمكن التراجع عن هذا الإجراء.
+            </p>
+            <button class="btn btn-danger" onclick="clearAllData()">
+              <i class="fas fa-trash"></i> مسح كل البيانات
             </button>
           </div>
         </div>
@@ -139,106 +110,120 @@
   </main>
 
   <script src="../js/db.js"></script>
-  <script src="../js/ui.js"></script>
   <script>
-    if (!DB.isAdmin()) window.location.href = 'login.html';
-
-    document.addEventListener('DOMContentLoaded', async function() {
-      // تهيئة Firebase
-      await DB.init();
-      
-      const settings = await DB.getSettings();
-      document.getElementById('siteName').value = settings.siteName || '';
-      document.getElementById('siteDesc').value = settings.siteDescription || '';
-      document.getElementById('itemsPerPage').value = settings.itemsPerPage || 20;
-      UI.loadTheme();
-    });
-
-    async function saveSettings(e) {
-      e.preventDefault();
-      const settings = await DB.getSettings();
-      settings.siteName = document.getElementById('siteName').value.trim();
-      settings.siteDescription = document.getElementById('siteDesc').value.trim();
-      settings.itemsPerPage = parseInt(document.getElementById('itemsPerPage').value);
-      await DB.saveSettings(settings);
-      UI.showAlert('تم حفظ الإعدادات بنجاح!', 'success');
+    if (localStorage.getItem('admin_logged') !== 'true') {
+      window.location.href = 'login.html';
     }
 
-    async function changePassword(e) {
+    document.getElementById('passwordForm').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const current = document.getElementById('currentPass').value;
-      const newPass = document.getElementById('newPass').value;
-      const confirm = document.getElementById('confirmPass').value;
+      const current = document.getElementById('currentPassword').value;
+      const newPass = document.getElementById('newPassword').value;
+      const confirm = document.getElementById('confirmPassword').value;
 
       if (newPass !== confirm) {
-        UI.showAlert('كلمتا المرور الجديدتان غير متطابقتين!', 'warning');
+        showAlert('كلمتا المرور غير متطابقتين', 'danger');
         return;
       }
 
-      const result = await DB.changePassword(current, newPass);
-      if (result.success) {
-        document.getElementById('currentPass').value = '';
-        document.getElementById('newPass').value = '';
-        document.getElementById('confirmPass').value = '';
-        UI.showAlert(result.message, 'success');
-      } else {
-        UI.showAlert(result.message, 'danger');
+      const success = await DB.login('admin', current);
+      if (!success) {
+        showAlert('كلمة المرور الحالية غير صحيحة', 'danger');
+        return;
       }
-    }
 
-    async function exportData() {
-      const data = {
-        comics: await DB.getComics(),
-        chapters: await DB.getData('chapters'),
-        categories: await DB.getCategories(),
-        settings: await DB.getSettings()
-      };
-      
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `comicx-backup-${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      UI.showAlert('تم تصدير البيانات بنجاح!', 'success');
-    }
+      await DB.updatePassword(newPass);
+      showAlert('تم تغيير كلمة المرور بنجاح!', 'success');
+      this.reset();
+    });
 
-    async function importData(file) {
-      if (!file) return;
-      
+    document.getElementById('importDropZone').addEventListener('click', () => {
+      document.getElementById('importInput').click();
+    });
+
+    document.getElementById('importInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) importFile(file);
+    });
+
+    document.getElementById('importDropZone').addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    document.getElementById('importDropZone').addEventListener('drop', (e) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith('.json')) {
+        importFile(file);
+      }
+    });
+
+    function importFile(file) {
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = async function(e) {
         try {
           const data = JSON.parse(e.target.result);
-          if (data.comics) await DB.setData('comics', data.comics);
-          if (data.chapters) await DB.setData('chapters', data.chapters);
-          if (data.categories) await DB.setData('categories', data.categories);
-          if (data.settings) await DB.setData('settings', data.settings);
-          UI.showAlert('تم استيراد البيانات بنجاح! يتم إعادة تحميل الصفحة...', 'success');
-          setTimeout(() => location.reload(), 1500);
+          if (data.comics) {
+            for (const [id, comic] of Object.entries(data.comics)) {
+              await window.db.ref(`comics/${id}`).set(comic);
+            }
+          }
+          if (data.chapters) {
+            for (const [id, chapter] of Object.entries(data.chapters)) {
+              await window.db.ref(`chapters/${id}`).set(chapter);
+            }
+          }
+          if (data.categories) {
+            for (const [id, cat] of Object.entries(data.categories)) {
+              await window.db.ref(`categories/${id}`).set(cat);
+            }
+          }
+          showAlert('تم الاستيراد بنجاح!', 'success');
         } catch (err) {
-          UI.showAlert('خطأ في ملف البيانات!', 'danger');
+          showAlert('خطأ في ملف البيانات', 'danger');
         }
       };
       reader.readAsText(file);
     }
 
-    async function resetData() {
-      if (confirm('هل أنت متأكد من إعادة تعيين جميع البيانات؟ سيتم حذف جميع الكوميكس والفصول المضافة.')) {
-        if (confirm('تأكيد نهائي: سيتم حذف جميع البيانات المخصصة!')) {
-          await DB.setData('comics', []);
-          await DB.setData('chapters', []);
-          await DB.init();
-          UI.showAlert('تم إعادة تعيين البيانات! يتم إعادة تحميل الصفحة...', 'success');
-          setTimeout(() => location.reload(), 1500);
-        }
-      }
+    async function exportData() {
+      showAlert('جاري التصدير...', 'warning');
+      const comics = await window.db.ref('comics').once('value');
+      const chapters = await window.db.ref('chapters').once('value');
+      const categories = await window.db.ref('categories').once('value');
+      const settings = await window.db.ref('settings').once('value');
+
+      const data = {
+        comics: comics.val() || {},
+        chapters: chapters.val() || {},
+        categories: categories.val() || {},
+        settings: settings.val() || {},
+        exportDate: new Date().toISOString()
+      };
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sedbox-comics-backup-${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showAlert('تم التصدير بنجاح!', 'success');
     }
 
-    function handleLogout() {
-      DB.logout();
-      window.location.href = 'login.html';
+    async function clearAllData() {
+      if (!confirm('هل أنت متأكد من مسح جميع البيانات؟')) return;
+      if (!confirm('تأكيد أخير: سيتم حذف كل شيء نهائياً!')) return;
+
+      await window.db.ref('comics').remove();
+      await window.db.ref('chapters').remove();
+      await window.db.ref('categories').remove();
+      showAlert('تم مسح جميع البيانات', 'success');
+    }
+
+    function showAlert(msg, type) {
+      document.getElementById('alertBox').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+      setTimeout(() => { document.getElementById('alertBox').innerHTML = ''; }, 3000);
     }
   </script>
 </body>

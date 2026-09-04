@@ -3,384 +3,294 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إدارة الفصول - لوحة التحكم</title>
+  <title>إدارة الفصول - Sedbox Comics</title>
+  <meta name="robots" content="noindex, nofollow">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Bangers&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="../css/style.css">
-  
-  <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
   <nav class="navbar">
     <a href="../index.html" class="navbar-brand">
-      <svg viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent); width:32px; height:32px;">
-        <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-      </svg>
-      لوحة التحكم
+      <div class="logo-icon"><i class="fas fa-book-open"></i></div>
+      <span class="logo-text">Sedbox Comics</span>
     </a>
     <div class="navbar-actions">
-      <a href="../index.html" class="btn btn-sm btn-secondary">
-        <i class="fas fa-external-link-alt"></i> زيارة الموقع
-      </a>
-      <button class="btn btn-sm btn-danger" onclick="handleLogout()">
-        <i class="fas fa-sign-out-alt"></i> خروج
-      </button>
+      <a href="../index.html" class="btn btn-secondary btn-sm"><i class="fas fa-home"></i> الموقع</a>
+      <button class="btn btn-danger btn-sm" onclick="DB.logout()"><i class="fas fa-sign-out-alt"></i> خروج</button>
     </div>
   </nav>
 
   <main class="main-content">
     <div class="admin-layout">
       <aside class="admin-sidebar">
-        <div class="sidebar-menu">
-          <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> الإحصائيات</a>
-          <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> الكوميكس</a>
-          <a href="chapters.html" class="menu-item active"><i class="fas fa-book-open"></i> الفصول</a>
-          <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> التصنيفات</a>
-          <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> الإعدادات</a>
-        </div>
+        <a href="index.html" class="menu-item"><i class="fas fa-chart-pie"></i> الإحصائيات</a>
+        <a href="comics.html" class="menu-item"><i class="fas fa-book"></i> الكوميكس</a>
+        <a href="chapters.html" class="menu-item active"><i class="fas fa-list"></i> الفصول</a>
+        <a href="categories.html" class="menu-item"><i class="fas fa-folder"></i> التصنيفات</a>
+        <a href="settings.html" class="menu-item"><i class="fas fa-cog"></i> الإعدادات</a>
       </aside>
 
       <div class="admin-main">
-        <div class="section-header" style="margin-bottom: 2rem;">
-          <h1 style="font-size: 1.8rem; font-weight: 800;">
-            <i class="fas fa-book-open" style="color: var(--accent);"></i>
+        <div class="section-header">
+          <h1 class="section-title">
+            <span class="icon"><i class="fas fa-list"></i></span>
             إدارة الفصول
           </h1>
           <button class="btn btn-primary" onclick="showAddForm()">
-            <i class="fas fa-plus"></i> إضافة فصل جديد
+            <i class="fas fa-plus"></i> إضافة فصل
           </button>
         </div>
 
         <div id="alertBox"></div>
 
-        <!-- نموذج إضافة/تعديل الفصل -->
-        <div id="chapterForm" class="admin-form" style="display: none; margin-bottom: 2rem;">
-          <h3 id="formTitle" style="margin-bottom: 1.5rem; font-size: 1.2rem;">
-            <i class="fas fa-plus-circle" style="color: var(--accent);"></i>
-            إضافة فصل جديد
-          </h3>
-          
-          <form onsubmit="saveChapter(event)">
-            <input type="hidden" id="editId" value="">
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div id="addForm" style="display: none;">
+          <div class="admin-form" style="margin-bottom: 2rem;">
+            <h2 style="font-family: var(--font-comic); margin-bottom: 1.5rem; color: var(--accent);">
+              <i class="fas fa-plus-circle"></i> إضافة فصل جديد
+            </h2>
+            <form id="chapterForm">
               <div class="form-group">
                 <label>الكوميكس *</label>
                 <select id="chapterComic" required></select>
               </div>
-              
               <div class="form-group">
                 <label>رقم الفصل *</label>
                 <input type="number" id="chapterNumber" min="1" placeholder="1" required>
               </div>
-            </div>
-            
-            <div class="form-group">
-              <label>عنوان الفصل *</label>
-              <input type="text" id="chapterTitle" placeholder="مثال: البداية" required>
-            </div>
-            
-            <div class="form-group">
-              <label>صور الصفحات (اسحب وأفلت أو اختر)</label>
-              <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-                <div class="drop-icon"><i class="fas fa-cloud-upload-alt"></i></div>
-                <p>اسحب صور الصفحات هنا</p>
-                <p><span class="browse-btn">أو اضغط لاختيار الملفات</span></p>
-                <small style="color: var(--text-secondary);">يدعم: JPG, PNG, WEBP - يمكن اختيار عدة ملفات</small>
+              <div class="form-group">
+                <label>عنوان الفصل *</label>
+                <input type="text" id="chapterTitle" placeholder="مثال: البداية" required>
               </div>
-              <input type="file" id="fileInput" multiple accept="image/*" style="display: none;" 
-                     onchange="handleFiles(this.files)">
-            </div>
-            
-            <!-- معاينة الصور -->
-            <div class="upload-preview" id="uploadPreview"></div>
-            
-            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-              <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> حفظ الفصل
-              </button>
-              <button type="button" class="btn btn-secondary" onclick="hideForm()">
-                <i class="fas fa-times"></i> إلغاء
-              </button>
-            </div>
-          </form>
+              <div class="form-group">
+                <label>صور الفصل *</label>
+                <div class="drop-zone" id="pagesDropZone">
+                  <div class="drop-icon"><i class="fas fa-images"></i></div>
+                  <p>اسحب الصور هنا أو انقر للاختيار</p>
+                  <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.5rem;">يمكنك اختيار عدة صور دفعة واحدة</p>
+                  <input type="file" id="pagesInput" accept="image/*" multiple style="display: none;">
+                </div>
+                <div id="pagesPreview" class="upload-preview"></div>
+              </div>
+              <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> حفظ الفصل</button>
+                <button type="button" class="btn btn-secondary" onclick="hideAddForm()"><i class="fas fa-times"></i> إلغاء</button>
+              </div>
+            </form>
+          </div>
         </div>
 
-        <!-- اختيار الكوميكس لعرض فصوله -->
-        <div class="form-group" style="max-width: 400px; margin-bottom: 1.5rem;">
-          <label>عرض فصول كوميكس:</label>
-          <select id="filterComic" onchange="loadChapters()">
-            <option value="">جميع الفصول</option>
-          </select>
-        </div>
-
-        <!-- جدول الفصول -->
-        <div id="chaptersTable"></div>
+        <div id="chaptersList"></div>
       </div>
     </div>
   </main>
 
   <script src="../js/db.js"></script>
-  <script src="../js/ui.js"></script>
   <script>
-    if (!DB.isAdmin()) window.location.href = 'login.html';
-
-    let uploadedFiles = [];
-
-    document.addEventListener('DOMContentLoaded', async function() {
-      // تهيئة Firebase
-      await DB.init();
-      
-      await loadComicsList();
-      await loadChapters();
-      setupDropZone();
-      UI.loadTheme();
-    });
-
-    async function loadComicsList() {
-      const comics = await DB.getComics();
-      const options = comics.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
-      document.getElementById('chapterComic').innerHTML = options;
-      document.getElementById('filterComic').innerHTML = 
-        '<option value="">جميع الفصول</option>' + options;
+    if (localStorage.getItem('admin_logged') !== 'true') {
+      window.location.href = 'login.html';
     }
 
-    async function loadChapters() {
-      const filterId = document.getElementById('filterComic').value;
-      let chapters = await DB.getChapters(filterId ? parseInt(filterId) : null);
-      
-      if (filterId) {
-        // فصول كوميكس محدد
-      } else {
-        // جميع الفصول
-        const allData = await DB.getData('chapters') || [];
-        chapters = Array.isArray(allData) ? allData : Object.values(allData);
-        chapters.sort((a, b) => a.comicId - b.comicId || a.number - b.number);
+    let pageFiles = [];
+
+    document.addEventListener('DOMContentLoaded', async function() {
+      await DB.init();
+      loadComics();
+    });
+
+    async function loadComics() {
+      const comics = await DB.getLatestComics(200);
+      const select = document.getElementById('chapterComic');
+      select.innerHTML = '<option value="">اختر الكوميكس</option>' +
+        comics.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+
+      loadChapters();
+    }
+
+    document.getElementById('pagesDropZone').addEventListener('click', () => {
+      document.getElementById('pagesInput').click();
+    });
+
+    document.getElementById('pagesInput').addEventListener('change', function(e) {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        if (!pageFiles.find(f => f.name === file.name && f.size === file.size)) {
+          pageFiles.push(file);
+        }
+      });
+      renderPreviews();
+    });
+
+    document.getElementById('pagesDropZone').addEventListener('dragover', (e) => {
+      e.preventDefault();
+      document.getElementById('pagesDropZone').classList.add('dragover');
+    });
+
+    document.getElementById('pagesDropZone').addEventListener('dragleave', () => {
+      document.getElementById('pagesDropZone').classList.remove('dragover');
+    });
+
+    document.getElementById('pagesDropZone').addEventListener('drop', (e) => {
+      e.preventDefault();
+      document.getElementById('pagesDropZone').classList.remove('dragover');
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      files.forEach(file => {
+        if (!pageFiles.find(f => f.name === file.name && f.size === file.size)) {
+          pageFiles.push(file);
+        }
+      });
+      renderPreviews();
+    });
+
+    function renderPreviews() {
+      const container = document.getElementById('pagesPreview');
+      container.innerHTML = '';
+      pageFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          container.innerHTML += `
+            <div class="preview-item">
+              <img src="${ev.target.result}" alt="صفحة ${index + 1}">
+              <div class="remove-btn" onclick="removePage(${index})">
+                <i class="fas fa-times"></i>
+              </div>
+            </div>`;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function removePage(index) {
+      pageFiles.splice(index, 1);
+      renderPreviews();
+    }
+
+    document.getElementById('chapterForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const comicId = document.getElementById('chapterComic').value;
+      const chapterNumber = parseInt(document.getElementById('chapterNumber').value);
+      const chapterTitle = document.getElementById('chapterTitle').value.trim();
+
+      if (!comicId || !chapterTitle) {
+        showAlert('يرجى ملء جميع الحقول', 'danger');
+        return;
       }
 
-      if (chapters.length === 0) {
-        document.getElementById('chaptersTable').innerHTML = `
+      if (pageFiles.length === 0) {
+        showAlert('يرجى اختيار صور الفصل', 'danger');
+        return;
+      }
+
+      showAlert('جاري رفع الصور، يرجى الانتظار...', 'warning');
+
+      const images = [];
+      for (const file of pageFiles) {
+        const base64 = await DB.compressImage(file, 1200, 1600, 0.85);
+        images.push(base64);
+      }
+
+      const chapterData = {
+        comicId,
+        number: chapterNumber,
+        title: chapterTitle,
+        images
+      };
+
+      const result = await DB.addChapter(chapterData);
+      if (result) {
+        showAlert('تم إضافة الفصل بنجاح!', 'success');
+        hideAddForm();
+        loadChapters();
+      } else {
+        showAlert('حدث خطأ أثناء الحفظ', 'danger');
+      }
+    });
+
+    async function loadChapters() {
+      const comics = await DB.getLatestComics(200);
+      const comicsMap = {};
+      comics.forEach(c => { comicsMap[c.id] = c.title; });
+
+      let allChapters = [];
+      for (const comic of comics) {
+        const chapters = await DB.getChapters(comic.id);
+        chapters.forEach(ch => {
+          allChapters.push({ ...ch, comicTitle: comic.title });
+        });
+      }
+
+      allChapters.sort((a, b) => (b.number || 0) - (a.number || 0));
+
+      if (allChapters.length === 0) {
+        document.getElementById('chaptersList').innerHTML = `
           <div class="empty-state">
-            <div class="empty-icon"><i class="fas fa-book-open"></i></div>
+            <div class="empty-icon"><i class="fas fa-list"></i></div>
             <h3>لا توجد فصول بعد</h3>
+            <p>ابدأ بإضافة أول فصل.</p>
           </div>`;
         return;
       }
 
-      const comics = await DB.getComics();
-      document.getElementById('chaptersTable').innerHTML = `
-        <div style="overflow-x: auto;">
-          <table class="admin-table">
+      document.getElementById('chaptersList').innerHTML = `
+        <div class="admin-table" style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse;">
             <thead>
-              <tr>
-                <th>الكوميكس</th>
-                <th>رقم الفصل</th>
-                <th>العنوان</th>
-                <th>عدد الصفحات</th>
-                <th>التاريخ</th>
-                <th>الإجراءات</th>
+              <tr style="background: var(--bg-secondary); border-bottom: 3px solid var(--accent);">
+                <th style="padding: 1rem; text-align: right;">الكوميكس</th>
+                <th style="padding: 1rem; text-align: right;">رقم الفصل</th>
+                <th style="padding: 1rem; text-align: right;">العنوان</th>
+                <th style="padding: 1rem; text-align: right;">الصور</th>
+                <th style="padding: 1rem; text-align: center;">الإجراءات</th>
               </tr>
             </thead>
             <tbody>
-              ${chapters.map(ch => {
-                const comic = comics.find(c => c.id === ch.comicId);
-                return `
-                  <tr>
-                    <td><strong>${comic ? comic.title : 'محذوف'}</strong></td>
-                    <td>${ch.number}</td>
-                    <td>${ch.title}</td>
-                    <td>${ch.images ? ch.images.length : 0} صفحة</td>
-                    <td>${new Date(ch.createdAt).toLocaleDateString('ar-SA')}</td>
-                    <td>
-                      <div class="actions">
-                        <button class="btn btn-sm btn-secondary" onclick="editChapter(${ch.id})" title="تعديل">
-                          <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteChapter(${ch.id})" title="حذف">
-                          <i class="fas fa-trash"></i>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                `;
-              }).join('')}
+              ${allChapters.slice(0, 50).map(ch => `
+                <tr style="border-bottom: 2px solid var(--border);">
+                  <td style="padding: 1rem;">${ch.comicTitle}</td>
+                  <td style="padding: 1rem;">${ch.number || '-'}</td>
+                  <td style="padding: 1rem; font-weight: 700;">${ch.title}</td>
+                  <td style="padding: 1rem;">${ch.images ? ch.images.length : 0} صفحة</td>
+                  <td style="padding: 1rem; text-align: center;">
+                    <button class="btn btn-danger btn-sm" onclick="deleteChapter('${ch.comicId}', '${ch.id}')">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
-        </div>
-      `;
+        </div>`;
     }
 
     function showAddForm() {
-      document.getElementById('chapterForm').style.display = 'block';
-      document.getElementById('formTitle').innerHTML = '<i class="fas fa-plus-circle" style="color: var(--accent);"></i> إضافة فصل جديد';
-      document.getElementById('editId').value = '';
-      document.getElementById('chapterNumber').value = '';
-      document.getElementById('chapterTitle').value = '';
-      document.getElementById('uploadPreview').innerHTML = '';
-      uploadedFiles = [];
-      document.getElementById('chapterForm').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('addForm').style.display = 'block';
+      document.getElementById('addForm').scrollIntoView({ behavior: 'smooth' });
     }
 
-    function hideForm() {
-      document.getElementById('chapterForm').style.display = 'none';
+    function hideAddForm() {
+      document.getElementById('addForm').style.display = 'none';
+      document.getElementById('chapterForm').reset();
+      document.getElementById('pagesPreview').innerHTML = '';
+      pageFiles = [];
     }
 
-    function setupDropZone() {
-      const zone = document.getElementById('dropZone');
-      
-      zone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        zone.classList.add('dragover');
-      });
-      
-      zone.addEventListener('dragleave', () => {
-        zone.classList.remove('dragover');
-      });
-      
-      zone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        zone.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
-      });
-    }
-
-    function handleFiles(files) {
-      Array.from(files).forEach(file => {
-        if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              const MAX_WIDTH = 1200;
-              const MAX_HEIGHT = 1600;
-              let width = img.width;
-              let height = img.height;
-              
-              if (width > MAX_WIDTH) {
-                height = (height * MAX_WIDTH) / width;
-                width = MAX_WIDTH;
-              }
-              if (height > MAX_HEIGHT) {
-                width = (width * MAX_HEIGHT) / height;
-                height = MAX_HEIGHT;
-              }
-              
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img, 0, 0, width, height);
-              
-              uploadedFiles.push({
-                name: file.name,
-                data: canvas.toDataURL('image/jpeg', 0.92)
-              });
-              renderPreview();
-            };
-            img.src = e.target.result;
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-    }
-
-    function renderPreview() {
-      document.getElementById('uploadPreview').innerHTML = uploadedFiles.map((f, i) => `
-        <div class="preview-item">
-          <img src="${f.data}" alt="${f.name}">
-          <div class="remove-btn" onclick="removeFile(${i})">
-            <i class="fas fa-times"></i>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function removeFile(index) {
-      uploadedFiles.splice(index, 1);
-      renderPreview();
-    }
-
-    async function saveChapter(e) {
-      e.preventDefault();
-      
-      try {
-        const editId = document.getElementById('editId').value;
-        const comicId = parseInt(document.getElementById('chapterComic').value);
-        const number = parseInt(document.getElementById('chapterNumber').value);
-        const title = document.getElementById('chapterTitle').value.trim();
-
-        if (!comicId || !number || !title) {
-          UI.showAlert('يرجى ملء جميع الحقول المطلوبة!', 'warning');
-          return;
-        }
-
-        // استخدام الصور المحملة
-        let images = uploadedFiles.map(f => f.data);
-        
-        if (images.length === 0 && !editId) {
-          UI.showAlert('يرجى رفع صور للصفحات!', 'warning');
-          return;
-        }
-
-        if (editId) {
-          const chapters = await DB.getData('chapters') || [];
-          const chaptersList = Array.isArray(chapters) ? chapters : Object.values(chapters);
-          const chapter = chaptersList.find(ch => ch.id === parseInt(editId));
-          if (chapter && images.length === 0) {
-            images = chapter.images;
-          }
-          await DB.updateChapter(parseInt(editId), { comicId, number, title, images });
-          showAlert('تم تحديث الفصل بنجاح!', 'success');
-        } else {
-          await DB.addChapter({ comicId, number, title, images });
-          showAlert('تم إضافة الفصل بنجاح!', 'success');
-        }
-
-        hideForm();
-        await loadChapters();
-      } catch (error) {
-        console.error('خطأ في حفظ الفصل:', error);
-        UI.showAlert('حدث خطأ أثناء الحفظ! تأكد من حجم الصور.', 'danger');
-      }
-    }
-
-    async function editChapter(id) {
-      const chapters = await DB.getData('chapters') || [];
-      const chapter = chapters.find(ch => ch.id === id);
-      if (!chapter) return;
-
-      document.getElementById('editId').value = id;
-      document.getElementById('chapterComic').value = chapter.comicId;
-      document.getElementById('chapterNumber').value = chapter.number;
-      document.getElementById('chapterTitle').value = chapter.title;
-      document.getElementById('formTitle').innerHTML = '<i class="fas fa-edit" style="color: var(--accent);"></i> تعديل الفصل';
-      
-      uploadedFiles = [];
-      document.getElementById('uploadPreview').innerHTML = '';
-      
-      document.getElementById('chapterForm').style.display = 'block';
-      document.getElementById('chapterForm').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    async function deleteChapter(id) {
+    async function deleteChapter(comicId, chapterId) {
       if (confirm('هل أنت متأكد من حذف هذا الفصل؟')) {
-        await DB.deleteChapter(id);
-        showAlert('تم حذف الفصل بنجاح.', 'danger');
-        await loadChapters();
+        const result = await DB.deleteChapter(comicId, chapterId);
+        if (result) {
+          showAlert('تم الحذف بنجاح', 'success');
+          loadChapters();
+        }
       }
     }
 
-    function showAlert(message, type) {
-      UI.showAlert(message, type);
-    }
-
-    function handleLogout() {
-      DB.logout();
-      window.location.href = 'login.html';
+    function showAlert(msg, type) {
+      document.getElementById('alertBox').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+      setTimeout(() => { document.getElementById('alertBox').innerHTML = ''; }, 5000);
     }
   </script>
 </body>
