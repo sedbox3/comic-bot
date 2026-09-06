@@ -1,0 +1,24 @@
+# Core
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+httpx>=0.25.0
+
+# Arabic text shaping
+arabic-reshaper>=3.0.0
+python-bidi>=0.6.0
+
+# OCR (choose one)
+rapidocr_onnxruntime>=1.3.0
+# pytesseract>=0.3.10  # optional, needs Tesseract installed
+# easyocr>=1.7.0       # optional, larger install
+
+# Archive handling
+rarfile>=4.0
+
+# CLI & Bot
+rich>=13.0.0
+python-telegram-bot>=20.0
+
+# Config
+python-dotenv>=1.0.0

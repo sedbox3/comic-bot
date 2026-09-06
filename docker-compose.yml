@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  comic-bot:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - /tmp/comic_work:/tmp/comic_work
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
