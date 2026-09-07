@@ -1,9 +1,19 @@
 """Telegram Bot entry point for Comic Translator."""
 
 import os
+import sys
+
+# Force immediate stdout flushing in cloud logs
+sys.stdout.reconfigure(line_buffering=True)
+
+# Prevent OpenMP and ONNX thread contention deadlock on shared cloud vCPUs
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["ORT_DISABLE_TELEMETRY"] = "1"
 
-import sys
 import logging
 from pathlib import Path
 

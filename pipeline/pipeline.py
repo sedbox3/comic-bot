@@ -2,6 +2,15 @@
 
 import os
 import sys
+
+# Prevent OpenMP and ONNX thread contention deadlock on shared cloud vCPUs
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
+os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["ORT_DISABLE_TELEMETRY"] = "1"
+
 import re
 import cv2
 import json
