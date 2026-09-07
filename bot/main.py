@@ -1,6 +1,8 @@
 """Telegram Bot entry point for Comic Translator."""
 
 import os
+os.environ["ORT_DISABLE_TELEMETRY"] = "1"
+
 import sys
 import logging
 from pathlib import Path

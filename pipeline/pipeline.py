@@ -303,23 +303,39 @@ class ComicPipeline:
         return grouped, mask
 
     def _rapidocr_detect(self, image: np.ndarray):
-        """Use RapidOCR's built-in DBNet text detection."""
+        """Use RapidOCR's built-in DBNet text detection with optimized parameters for comics."""
         import cv2
         import numpy as np
         
         try:
             from rapidocr_onnxruntime import RapidOCR
-            ocr = RapidOCR()
+            
+            # Configure RapidOCR for high-res comic pages
+            ocr = RapidOCR(
+                det_limit_side_len=2560,    # Do not downscale 2K/3K comic pages
+                det_limit_type='max',
+                det_db_thresh=0.2,          # Low threshold to capture stylized comic fonts
+                det_db_box_thresh=0.3,      # Retain smaller shouts and whispers
+                det_db_unclip_ratio=1.8     # Expand box contour to cover full dialogue words
+            )
+            
+            img_h, img_w = image.shape[:2]
+            
+            # Ensure detector limit matches the actual image resolution
+            max_side = max(img_h, img_w)
+            if hasattr(ocr, 'text_detector'):
+                ocr.text_detector.det_limit_side_len = max(2048, max_side)
+            
+            logger.info(f"[RapidOCR] Running DBNet on full resolution ({img_w}x{img_h})...")
             
             # RapidOCR returns: [[box_points], "text", confidence_score]
             result, _ = ocr(image)
             
             if not result:
-                logger.warning("RapidOCR found no text on page.")
+                logger.warning("[RapidOCR] No text detected on page.")
                 return np.zeros(image.shape[:2], dtype=np.uint8), []
             
-            h, w = image.shape[:2]
-            mask = np.zeros((h, w), dtype=np.uint8)
+            mask = np.zeros((img_h, img_w), dtype=np.uint8)
             blk_list = []
             
             class Block:
@@ -337,17 +353,17 @@ class ComicPipeline:
                 # Get bounding box
                 x, y, bw, bh = cv2.boundingRect(pts)
                 
-                # Filter out microscopic noise
-                if bw < 10 or bh < 10 or len(text) == 0:
+                # Discard tiny artifacts (<12px) and empty strings
+                if bw < 12 or bh < 12 or len(text) == 0:
                     continue
                 
-                # Add 8% safety padding around text
-                pad_x = int(bw * 0.08)
-                pad_y = int(bh * 0.08)
+                # Add 6% padding to ensure letters aren't clipped
+                pad_x = int(bw * 0.06)
+                pad_y = int(bh * 0.06)
                 bx = max(0, x - pad_x)
                 by = max(0, y - pad_y)
-                bx2 = min(w, x + bw + pad_x)
-                by2 = min(h, y + bh + pad_y)
+                bx2 = min(img_w, x + bw + pad_x)
+                by2 = min(img_h, y + bh + pad_y)
                 
                 blk = Block(bx, by, bx2, by2, text)
                 blk_list.append(blk)
@@ -359,11 +375,11 @@ class ComicPipeline:
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
             mask = cv2.dilate(mask, kernel, iterations=1)
             
-            logger.info(f"RapidOCR DBNet found {len(blk_list)} text regions")
+            logger.info(f"[RapidOCR] Successfully found {len(blk_list)} dialogue regions.")
             return mask, blk_list
             
         except Exception as e:
-            logger.error(f"RapidOCR detection failed: {e}")
+            logger.error(f"[RapidOCR] Detection failed: {e}")
             return np.zeros(image.shape[:2], dtype=np.uint8), []
 
     def _run_ocr(self, image: np.ndarray, blk_list, page_label: str) -> list:
