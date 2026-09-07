@@ -146,19 +146,27 @@ class ComicPipeline:
 
     def _get_detector(self):
         if self._detector is None:
-            old_cwd = os.getcwd()
-            os.chdir(self._bt_cwd)
-            try:
-                from ballontranslator.modules.textdetector import TEXTDETECTORS
-                DetectorClass = TEXTDETECTORS.resolve_module('ctd')
-                self._detector = DetectorClass(device='cpu')
-                self._detector.load_model()
-                if hasattr(self._detector, 'set_param'):
-                    self._detector.set_param('detect_size', 1024)
-                    self._detector.set_param('mask dilate size', 5)
-                logger.info("CTD detector loaded")
-            finally:
-                os.chdir(old_cwd)
+            # Try to load CTD detector from BallonsTranslator
+            if os.path.exists(self._bt_cwd):
+                old_cwd = os.getcwd()
+                os.chdir(self._bt_cwd)
+                try:
+                    from ballontranslator.modules.textdetector import TEXTDETECTORS
+                    DetectorClass = TEXTDETECTORS.resolve_module('ctd')
+                    self._detector = DetectorClass(device='cpu')
+                    self._detector.load_model()
+                    if hasattr(self._detector, 'set_param'):
+                        self._detector.set_param('detect_size', 1024)
+                        self._detector.set_param('mask dilate size', 5)
+                    logger.info("CTD detector loaded")
+                except Exception as e:
+                    logger.warning(f"Failed to load CTD detector: {e}")
+                    self._detector = None
+                finally:
+                    os.chdir(old_cwd)
+            else:
+                logger.warning("BallonsTranslator not found, using contour detection fallback")
+                self._detector = "fallback"
         return self._detector
 
     def _get_ocr(self):
@@ -192,12 +200,17 @@ class ComicPipeline:
         detector = self._get_detector()
         gc.collect()
 
-        try:
-            import torch
-            with torch.no_grad():
+        # Fallback detection if CTD not available
+        if detector == "fallback" or detector is None:
+            logger.info(f"[{page_label}] Using contour-based fallback detection")
+            mask_scaled, blk_list = self._fallback_detect(image_scaled)
+        else:
+            try:
+                import torch
+                with torch.no_grad():
+                    mask_scaled, blk_list = detector.detect(image_scaled)
+            except ImportError:
                 mask_scaled, blk_list = detector.detect(image_scaled)
-        except ImportError:
-            mask_scaled, blk_list = detector.detect(image_scaled)
 
         logger.info(f"[{page_label}] Total detected candidate boxes: {len(blk_list)}")
 
@@ -288,6 +301,67 @@ class ComicPipeline:
         logger.info(f"[{page_label}] Merged into bubbles: {len(grouped)}")
 
         return grouped, mask
+
+    def _fallback_detect(self, image: np.ndarray):
+        """Fallback contour-based detection when CTD is not available."""
+        import cv2
+        import numpy as np
+        
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image.copy()
+        h, w = gray.shape[:2]
+        
+        # Find bright regions (speech bubbles are white/light)
+        _, bright = cv2.threshold(gray, 175, 255, cv2.THRESH_BINARY)
+        
+        # Morphological operations to clean up
+        k_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+        bright = cv2.morphologyEx(bright, cv2.MORPH_OPEN, k_open)
+        
+        k_close = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 12))
+        bright = cv2.morphologyEx(bright, cv2.MORPH_CLOSE, k_close)
+        
+        # Find contours
+        contours, _ = cv2.findContours(bright, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Create mask and block list
+        mask = np.zeros((h, w), dtype=np.uint8)
+        blk_list = []
+        
+        for contour in contours:
+            x, y, cw, ch = cv2.boundingRect(contour)
+            area = cw * ch
+            
+            # Filter by size
+            if area < 1000 or area > h * w * 0.25:
+                continue
+            if cw < 20 or ch < 15:
+                continue
+            
+            # Check if has dark pixels (text)
+            roi = gray[y:y+ch, x:x+cw]
+            dark_ratio = np.sum(roi < 120) / (cw * ch)
+            
+            if dark_ratio > 0.02:
+                # Create block-like object
+                class Block:
+                    def __init__(self, x1, y1, x2, y2):
+                        self.xyxy = [x1, y1, x2, y2]
+                        self._text = ""
+                    def get_text(self):
+                        return self._text
+                
+                blk = Block(x, y, x+cw, y+ch)
+                blk_list.append(blk)
+                
+                # Add to mask
+                mask[y:y+ch, x:x+cw] = 255
+        
+        # Dilate mask slightly
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        mask = cv2.dilate(mask, kernel, iterations=1)
+        
+        logger.info(f"Fallback detection found {len(blk_list)} regions")
+        return mask, blk_list
 
     def _run_ocr(self, image: np.ndarray, blk_list, page_label: str) -> list:
         """Run ComicOCR on each detected text block."""
