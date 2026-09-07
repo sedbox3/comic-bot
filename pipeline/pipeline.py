@@ -303,7 +303,7 @@ class ComicPipeline:
         return grouped, mask
 
     def _rapidocr_detect(self, image: np.ndarray):
-        """Use RapidOCR's built-in DBNet text detection with optimized parameters for comics."""
+        """Use RapidOCR's built-in DBNet text detection with downscaling for cloud performance."""
         import cv2
         import numpy as np
         import time
@@ -311,20 +311,32 @@ class ComicPipeline:
         try:
             from rapidocr_onnxruntime import RapidOCR
             
-            # Configure RapidOCR for comic pages (1280 optimal for cloud)
+            # Configure RapidOCR for lightweight detection
             ocr = RapidOCR(
-                det_limit_side_len=1280,    # Optimal for cloud - prevents OOM
+                det_limit_side_len=1024,    # Ultra-light for cloud containers
                 det_limit_type='max',
                 det_db_thresh=0.2,          # Low threshold to capture stylized comic fonts
                 det_db_box_thresh=0.3,      # Retain smaller shouts and whispers
-                det_db_unclip_ratio=1.8     # Expand box contour to cover full dialogue words
+                det_db_unclip_ratio=1.6     # Expand box contour to cover full dialogue words
             )
             
-            img_h, img_w = image.shape[:2]
+            orig_h, orig_w = image.shape[:2]
+            max_det_side = 1024
             
-            logger.info(f"[RapidOCR] Running DBNet on {img_w}x{img_h}...")
+            # Downscale for detection to save memory
+            if max(orig_h, orig_w) > max_det_side:
+                scale = max_det_side / max(orig_h, orig_w)
+                det_w = int(orig_w * scale)
+                det_h = int(orig_h * scale)
+                det_image = cv2.resize(image, (det_w, det_h), interpolation=cv2.INTER_AREA)
+                logger.info(f"[RapidOCR] Downscaled to {det_w}x{det_h} for ultra-light detection (scale={scale:.4f})")
+            else:
+                scale = 1.0
+                det_image = image
+                logger.info(f"[RapidOCR] Running DBNet on {orig_w}x{orig_h}...")
+            
             t0 = time.time()
-            result, _ = ocr(image)
+            result, _ = ocr(det_image)
             elapsed = time.time() - t0
             logger.info(f"[RapidOCR] Detection finished in {elapsed:.2f}s")
             
@@ -332,7 +344,7 @@ class ComicPipeline:
                 logger.warning("[RapidOCR] No text detected on page.")
                 return np.zeros(image.shape[:2], dtype=np.uint8), []
             
-            mask = np.zeros((img_h, img_w), dtype=np.uint8)
+            mask = np.zeros((orig_h, orig_w), dtype=np.uint8)
             blk_list = []
             
             class Block:
@@ -342,12 +354,14 @@ class ComicPipeline:
                 def get_text(self):
                     return self._text
             
+            inv_scale = 1.0 / scale if scale != 1.0 else 1.0
+            
             for item in result:
                 pts = np.array(item[0], dtype=np.int32)
                 text = item[1].strip()
                 score = float(item[2])
                 
-                # Get bounding box
+                # Get bounding box on downscaled image
                 x, y, bw, bh = cv2.boundingRect(pts)
                 
                 # Discard tiny artifacts (<12px) and empty strings
@@ -359,14 +373,29 @@ class ComicPipeline:
                 pad_y = int(bh * 0.06)
                 bx = max(0, x - pad_x)
                 by = max(0, y - pad_y)
-                bx2 = min(img_w, x + bw + pad_x)
-                by2 = min(img_h, y + bh + pad_y)
+                bw_pad = bw + (2 * pad_x)
+                bh_pad = bh + (2 * pad_y)
                 
-                blk = Block(bx, by, bx2, by2, text)
+                # Scale coordinates back to original full-res image
+                real_x = int(bx * inv_scale)
+                real_y = int(by * inv_scale)
+                real_w = int(bw_pad * inv_scale)
+                real_h = int(bh_pad * inv_scale)
+                
+                # Ensure boxes stay within original canvas bounds
+                real_x = max(0, min(orig_w - 1, real_x))
+                real_y = max(0, min(orig_h - 1, real_y))
+                real_w = min(orig_w - real_x, real_w)
+                real_h = min(orig_h - real_y, real_h)
+                
+                if real_w < 12 or real_h < 12:
+                    continue
+                
+                blk = Block(real_x, real_y, real_x + real_w, real_y + real_h, text)
                 blk_list.append(blk)
                 
-                # Fill mask
-                mask[by:by2, bx:bx2] = 255
+                # Fill mask at original resolution
+                mask[real_y:real_y+real_h, real_x:real_x+real_w] = 255
             
             # Dilate mask slightly
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
