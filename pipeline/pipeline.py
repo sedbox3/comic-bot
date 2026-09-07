@@ -161,12 +161,12 @@ class ComicPipeline:
                     logger.info("CTD detector loaded")
                 except Exception as e:
                     logger.warning(f"Failed to load CTD detector: {e}")
-                    self._detector = None
+                    self._detector = "rapidocr"
                 finally:
                     os.chdir(old_cwd)
             else:
-                logger.warning("BallonsTranslator not found, using contour detection fallback")
-                self._detector = "fallback"
+                logger.info("BallonsTranslator not found, using RapidOCR DBNet detection")
+                self._detector = "rapidocr"
         return self._detector
 
     def _get_ocr(self):
@@ -200,10 +200,10 @@ class ComicPipeline:
         detector = self._get_detector()
         gc.collect()
 
-        # Fallback detection if CTD not available
-        if detector == "fallback" or detector is None:
-            logger.info(f"[{page_label}] Using contour-based fallback detection")
-            mask_scaled, blk_list = self._fallback_detect(image_scaled)
+        # Use RapidOCR DBNet detection if CTD not available
+        if detector == "rapidocr":
+            logger.info(f"[{page_label}] Using RapidOCR DBNet detection engine...")
+            mask_scaled, blk_list = self._rapidocr_detect(image_scaled)
         else:
             try:
                 import torch
@@ -302,101 +302,69 @@ class ComicPipeline:
 
         return grouped, mask
 
-    def _fallback_detect(self, image: np.ndarray):
-        """Fallback contour-based detection when CTD is not available."""
+    def _rapidocr_detect(self, image: np.ndarray):
+        """Use RapidOCR's built-in DBNet text detection."""
         import cv2
         import numpy as np
         
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image.copy()
-        h, w = gray.shape[:2]
-        
-        # Try multiple thresholds to find text
-        masks_to_try = []
-        
-        # Method 1: Find bright regions (speech bubbles)
-        _, bright = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
-        k_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        bright = cv2.morphologyEx(bright, cv2.MORPH_OPEN, k_open)
-        k_close = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 8))
-        bright = cv2.morphologyEx(bright, cv2.MORPH_CLOSE, k_close)
-        masks_to_try.append(("bright", bright))
-        
-        # Method 2: Find dark text on any background
-        _, dark = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV)
-        k_open2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        dark = cv2.morphologyEx(dark, cv2.MORPH_OPEN, k_open2)
-        masks_to_try.append(("dark", dark))
-        
-        # Method 3: Adaptive threshold
-        adaptive = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                         cv2.THRESH_BINARY_INV, 11, 2)
-        k_open3 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        adaptive = cv2.morphologyEx(adaptive, cv2.MORPH_OPEN, k_open3)
-        masks_to_try.append(("adaptive", adaptive))
-        
-        # Create mask and block list
-        mask = np.zeros((h, w), dtype=np.uint8)
-        blk_list = []
-        
-        for method_name, binary in masks_to_try:
-            # Find contours
-            contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        try:
+            from rapidocr_onnxruntime import RapidOCR
+            ocr = RapidOCR()
             
-            for contour in contours:
-                x, y, cw, ch = cv2.boundingRect(contour)
-                area = cw * ch
+            # RapidOCR returns: [[box_points], "text", confidence_score]
+            result, _ = ocr(image)
+            
+            if not result:
+                logger.warning("RapidOCR found no text on page.")
+                return np.zeros(image.shape[:2], dtype=np.uint8), []
+            
+            h, w = image.shape[:2]
+            mask = np.zeros((h, w), dtype=np.uint8)
+            blk_list = []
+            
+            class Block:
+                def __init__(self, x1, y1, x2, y2, text=""):
+                    self.xyxy = [x1, y1, x2, y2]
+                    self._text = text
+                def get_text(self):
+                    return self._text
+            
+            for item in result:
+                pts = np.array(item[0], dtype=np.int32)
+                text = item[1].strip()
+                score = float(item[2])
                 
-                # Filter by size - more lenient
-                if area < 500 or area > h * w * 0.3:
+                # Get bounding box
+                x, y, bw, bh = cv2.boundingRect(pts)
+                
+                # Filter out microscopic noise
+                if bw < 10 or bh < 10 or len(text) == 0:
                     continue
-                if cw < 15 or ch < 10:
-                    continue
                 
-                # Check aspect ratio
-                aspect = max(cw, ch) / max(min(cw, ch), 1)
-                if aspect > 10:
-                    continue
+                # Add 8% safety padding around text
+                pad_x = int(bw * 0.08)
+                pad_y = int(bh * 0.08)
+                bx = max(0, x - pad_x)
+                by = max(0, y - pad_y)
+                bx2 = min(w, x + bw + pad_x)
+                by2 = min(h, y + bh + pad_y)
                 
-                # Check if has dark pixels (text)
-                roi = gray[y:y+ch, x:x+cw]
-                dark_ratio = np.sum(roi < 130) / (cw * ch)
+                blk = Block(bx, by, bx2, by2, text)
+                blk_list.append(blk)
                 
-                if dark_ratio > 0.01:  # Very lenient threshold
-                    # Check if this region overlaps with existing
-                    overlaps = False
-                    for existing in blk_list:
-                        ex, ey, ew, eh = existing.xyxy
-                        # Check overlap
-                        ox1 = max(x, ex)
-                        oy1 = max(y, ey)
-                        ox2 = min(x+cw, ex+ew)
-                        oy2 = min(y+ch, ey+eh)
-                        if ox2 > ox1 and oy2 > oy1:
-                            overlap_area = (ox2-ox1) * (oy2-oy1)
-                            if overlap_area > area * 0.3:
-                                overlaps = True
-                                break
-                    
-                    if not overlaps:
-                        # Create block-like object
-                        class Block:
-                            def __init__(self, x1, y1, x2, y2):
-                                self.xyxy = [x1, y1, x2, y2]
-                                self._text = ""
-                            def get_text(self):
-                                return self._text
-                        
-                        blk = Block(x, y, x+cw, y+ch)
-                        blk_list.append(blk)
-                        
-                        # Add to mask
-                        mask[y:y+ch, x:x+cw] = 255
-        
-        # Sort by position (top-to-bottom, left-to-right)
-        blk_list.sort(key=lambda b: (b.xyxy[1], b.xyxy[0]))
-        
-        logger.info(f"Fallback detection found {len(blk_list)} regions using multiple methods")
-        return mask, blk_list
+                # Fill mask
+                mask[by:by2, bx:bx2] = 255
+            
+            # Dilate mask slightly
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+            mask = cv2.dilate(mask, kernel, iterations=1)
+            
+            logger.info(f"RapidOCR DBNet found {len(blk_list)} text regions")
+            return mask, blk_list
+            
+        except Exception as e:
+            logger.error(f"RapidOCR detection failed: {e}")
+            return np.zeros(image.shape[:2], dtype=np.uint8), []
 
     def _run_ocr(self, image: np.ndarray, blk_list, page_label: str) -> list:
         """Run ComicOCR on each detected text block."""
