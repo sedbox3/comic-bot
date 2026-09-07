@@ -310,57 +310,92 @@ class ComicPipeline:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image.copy()
         h, w = gray.shape[:2]
         
-        # Find bright regions (speech bubbles are white/light)
-        _, bright = cv2.threshold(gray, 175, 255, cv2.THRESH_BINARY)
+        # Try multiple thresholds to find text
+        masks_to_try = []
         
-        # Morphological operations to clean up
-        k_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (7, 7))
+        # Method 1: Find bright regions (speech bubbles)
+        _, bright = cv2.threshold(gray, 180, 255, cv2.THRESH_BINARY)
+        k_open = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         bright = cv2.morphologyEx(bright, cv2.MORPH_OPEN, k_open)
-        
-        k_close = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 12))
+        k_close = cv2.getStructuringElement(cv2.MORPH_RECT, (15, 8))
         bright = cv2.morphologyEx(bright, cv2.MORPH_CLOSE, k_close)
+        masks_to_try.append(("bright", bright))
         
-        # Find contours
-        contours, _ = cv2.findContours(bright, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Method 2: Find dark text on any background
+        _, dark = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY_INV)
+        k_open2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        dark = cv2.morphologyEx(dark, cv2.MORPH_OPEN, k_open2)
+        masks_to_try.append(("dark", dark))
+        
+        # Method 3: Adaptive threshold
+        adaptive = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                         cv2.THRESH_BINARY_INV, 11, 2)
+        k_open3 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        adaptive = cv2.morphologyEx(adaptive, cv2.MORPH_OPEN, k_open3)
+        masks_to_try.append(("adaptive", adaptive))
         
         # Create mask and block list
         mask = np.zeros((h, w), dtype=np.uint8)
         blk_list = []
         
-        for contour in contours:
-            x, y, cw, ch = cv2.boundingRect(contour)
-            area = cw * ch
+        for method_name, binary in masks_to_try:
+            # Find contours
+            contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
-            # Filter by size
-            if area < 1000 or area > h * w * 0.25:
-                continue
-            if cw < 20 or ch < 15:
-                continue
-            
-            # Check if has dark pixels (text)
-            roi = gray[y:y+ch, x:x+cw]
-            dark_ratio = np.sum(roi < 120) / (cw * ch)
-            
-            if dark_ratio > 0.02:
-                # Create block-like object
-                class Block:
-                    def __init__(self, x1, y1, x2, y2):
-                        self.xyxy = [x1, y1, x2, y2]
-                        self._text = ""
-                    def get_text(self):
-                        return self._text
+            for contour in contours:
+                x, y, cw, ch = cv2.boundingRect(contour)
+                area = cw * ch
                 
-                blk = Block(x, y, x+cw, y+ch)
-                blk_list.append(blk)
+                # Filter by size - more lenient
+                if area < 500 or area > h * w * 0.3:
+                    continue
+                if cw < 15 or ch < 10:
+                    continue
                 
-                # Add to mask
-                mask[y:y+ch, x:x+cw] = 255
+                # Check aspect ratio
+                aspect = max(cw, ch) / max(min(cw, ch), 1)
+                if aspect > 10:
+                    continue
+                
+                # Check if has dark pixels (text)
+                roi = gray[y:y+ch, x:x+cw]
+                dark_ratio = np.sum(roi < 130) / (cw * ch)
+                
+                if dark_ratio > 0.01:  # Very lenient threshold
+                    # Check if this region overlaps with existing
+                    overlaps = False
+                    for existing in blk_list:
+                        ex, ey, ew, eh = existing.xyxy
+                        # Check overlap
+                        ox1 = max(x, ex)
+                        oy1 = max(y, ey)
+                        ox2 = min(x+cw, ex+ew)
+                        oy2 = min(y+ch, ey+eh)
+                        if ox2 > ox1 and oy2 > oy1:
+                            overlap_area = (ox2-ox1) * (oy2-oy1)
+                            if overlap_area > area * 0.3:
+                                overlaps = True
+                                break
+                    
+                    if not overlaps:
+                        # Create block-like object
+                        class Block:
+                            def __init__(self, x1, y1, x2, y2):
+                                self.xyxy = [x1, y1, x2, y2]
+                                self._text = ""
+                            def get_text(self):
+                                return self._text
+                        
+                        blk = Block(x, y, x+cw, y+ch)
+                        blk_list.append(blk)
+                        
+                        # Add to mask
+                        mask[y:y+ch, x:x+cw] = 255
         
-        # Dilate mask slightly
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        mask = cv2.dilate(mask, kernel, iterations=1)
+        # Sort by position (top-to-bottom, left-to-right)
+        blk_list.sort(key=lambda b: (b.xyxy[1], b.xyxy[0]))
         
-        logger.info(f"Fallback detection found {len(blk_list)} regions")
+        logger.info(f"Fallback detection found {len(blk_list)} regions using multiple methods")
         return mask, blk_list
 
     def _run_ocr(self, image: np.ndarray, blk_list, page_label: str) -> list:
