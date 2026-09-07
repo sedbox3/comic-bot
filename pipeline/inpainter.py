@@ -60,6 +60,8 @@ class SmartInpainter:
                 logger.info(f"LaMa ONNX loaded: {self.model_path}")
             else:
                 logger.warning("LaMa ONNX not found, using OpenCV fallback only")
+        except ImportError:
+            logger.warning("onnxruntime not installed, using OpenCV fallback only")
         except Exception as e:
             logger.warning(f"LaMa ONNX load failed: {e}")
 
@@ -183,6 +185,8 @@ class LaMaInpainter:
                 logger.info(f"LaMa ONNX loaded: {self.model_path}")
             else:
                 logger.warning("LaMa ONNX not found or too small, using fallback")
+        except ImportError:
+            logger.warning("onnxruntime not installed, using OpenCV fallback")
         except Exception as e:
             logger.warning(f"LaMa ONNX load failed: {e}")
 
