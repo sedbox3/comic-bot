@@ -1,21 +1,11 @@
-# Core - lightweight
-opencv-python-headless==4.8.1.78
-numpy<2.0.0
-Pillow>=10.0.0
-httpx>=0.25.0
-
-# Arabic text shaping
-arabic-reshaper>=3.0.0
-python-bidi>=0.6.0
-
-# OCR - lightweight
-rapidocr_onnxruntime>=1.3.0
-
-# Archive handling
-rarfile>=4.0
-
-# Bot
-python-telegram-bot>=20.0
-
-# Config
-python-dotenv>=1.0.0
+# Ultra lightweight for 256MB RAM
+opencv-python-headless==4.5.5.64
+numpy==1.23.5
+Pillow==9.5.0
+httpx==0.24.1
+arabic-reshaper==3.0.0
+python-bidi==0.6.0
+rarfile==4.0
+python-telegram-bot==20.7
+python-dotenv==1.0.0
+rapidocr-onnxruntime==1.3.1
