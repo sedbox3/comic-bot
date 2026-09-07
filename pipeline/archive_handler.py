@@ -5,10 +5,27 @@ import re
 import shutil
 import tempfile
 import zipfile
+import logging
 from pathlib import Path
 from typing import List, Optional
 
+logger = logging.getLogger(__name__)
+
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".tiff"}
+
+# Configure unrar executable path if rarfile is used on Windows
+try:
+    import rarfile
+    for tool_path in [
+        r"C:\Program Files\WinRAR\UnRAR.exe",
+        r"C:\Program Files\7-Zip\7z.exe",
+        r"C:\Program Files (x86)\WinRAR\UnRAR.exe"
+    ]:
+        if os.path.exists(tool_path):
+            rarfile.UNRAR_TOOL = tool_path
+            break
+except ImportError:
+    rarfile = None
 
 
 def natural_sort_key(path: Path) -> list:
@@ -21,6 +38,7 @@ def natural_sort_key(path: Path) -> list:
 def extract_archive(archive_path: str, extract_dir: Optional[str] = None) -> str:
     """
     Extract a .cbr or .cbz archive to a temporary directory.
+    Uses magic bytes to detect actual format, with fallback chain.
     Returns the path to the extracted directory containing sorted image files.
     """
     archive_path = Path(archive_path)
@@ -36,37 +54,54 @@ def extract_archive(archive_path: str, extract_dir: Optional[str] = None) -> str
     else:
         os.makedirs(extract_dir, exist_ok=True)
 
-    if suffix == ".cbz":
-        _extract_cbz(archive_path, extract_dir)
-    elif suffix == ".cbr":
-        _extract_cbr(archive_path, extract_dir)
+    # 1. Inspect file header magic bytes
+    with open(archive_path, 'rb') as f:
+        magic = f.read(7)
 
+    is_zip_magic = magic.startswith(b"PK\x03\x04")
+    is_rar_magic = magic.startswith(b"Rar!\x1a\x07\x00") or magic.startswith(b"Rar!\x1a\x07\x01\x00")
+
+    # 2. Preferred extraction based on magic header
+    if is_zip_magic:
+        try:
+            return _extract_zip(archive_path, extract_dir)
+        except Exception as e:
+            logger.warning(f"ZIP extraction failed despite magic header: {e}. Trying RAR fallback...")
+
+    if is_rar_magic:
+        try:
+            return _extract_rar(archive_path, extract_dir)
+        except Exception as e:
+            logger.warning(f"RAR extraction failed despite magic header: {e}. Trying ZIP fallback...")
+
+    # 3. Fallback Chain: Try ZipFile first (handles misnamed CBRs), then RarFile
+    try:
+        return _extract_zip(archive_path, extract_dir)
+    except (zipfile.BadZipFile, Exception):
+        pass
+
+    try:
+        return _extract_rar(archive_path, extract_dir)
+    except Exception as e:
+        raise ValueError(f"Could not extract '{archive_path.name}'. File is neither a valid ZIP nor RAR archive: {e}")
+
+
+def _extract_zip(archive_path: Path, extract_dir: str) -> str:
+    """Extract a ZIP archive."""
+    with zipfile.ZipFile(archive_path, "r") as zf:
+        zf.extractall(extract_dir)
+    logger.info(f"[Archive] Successfully extracted ZIP container: {archive_path.name}")
     return extract_dir
 
 
-def _extract_cbz(archive_path: Path, extract_dir: str) -> None:
-    """Extract a .cbz (ZIP) archive."""
-    with zipfile.ZipFile(archive_path, "r") as zf:
-        zf.extractall(extract_dir)
-
-
-def _extract_cbr(archive_path: Path, extract_dir: str) -> None:
-    """Extract a .cbr (RAR) archive using unrar CLI or rarfile library."""
-    try:
-        import rarfile
-        with rarfile.RarFile(str(archive_path)) as rf:
-            rf.extractall(extract_dir)
-    except ImportError:
-        import subprocess
-        result = subprocess.run(
-            ["unrar", "x", "-o+", "-inul", str(archive_path), extract_dir],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            raise RuntimeError(f"unrar failed: {result.stderr}")
-    except rarfile.BadRarFile:
-        raise RuntimeError(f"Invalid or corrupted RAR file: {archive_path}")
+def _extract_rar(archive_path: Path, extract_dir: str) -> str:
+    """Extract a RAR archive."""
+    if rarfile is None:
+        raise ImportError("`rarfile` package is required to extract RAR archives.")
+    with rarfile.RarFile(str(archive_path), 'r') as rf:
+        rf.extractall(extract_dir)
+    logger.info(f"[Archive] Successfully extracted RAR container: {archive_path.name}")
+    return extract_dir
 
 
 def get_sorted_images(extract_dir: str) -> List[Path]:
