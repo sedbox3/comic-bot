@@ -306,13 +306,14 @@ class ComicPipeline:
         """Use RapidOCR's built-in DBNet text detection with optimized parameters for comics."""
         import cv2
         import numpy as np
+        import time
         
         try:
             from rapidocr_onnxruntime import RapidOCR
             
-            # Configure RapidOCR for high-res comic pages
+            # Configure RapidOCR for comic pages (1280 optimal for cloud)
             ocr = RapidOCR(
-                det_limit_side_len=2560,    # Do not downscale 2K/3K comic pages
+                det_limit_side_len=1280,    # Optimal for cloud - prevents OOM
                 det_limit_type='max',
                 det_db_thresh=0.2,          # Low threshold to capture stylized comic fonts
                 det_db_box_thresh=0.3,      # Retain smaller shouts and whispers
@@ -321,15 +322,11 @@ class ComicPipeline:
             
             img_h, img_w = image.shape[:2]
             
-            # Ensure detector limit matches the actual image resolution
-            max_side = max(img_h, img_w)
-            if hasattr(ocr, 'text_detector'):
-                ocr.text_detector.det_limit_side_len = max(2048, max_side)
-            
-            logger.info(f"[RapidOCR] Running DBNet on full resolution ({img_w}x{img_h})...")
-            
-            # RapidOCR returns: [[box_points], "text", confidence_score]
+            logger.info(f"[RapidOCR] Running DBNet on {img_w}x{img_h}...")
+            t0 = time.time()
             result, _ = ocr(image)
+            elapsed = time.time() - t0
+            logger.info(f"[RapidOCR] Detection finished in {elapsed:.2f}s")
             
             if not result:
                 logger.warning("[RapidOCR] No text detected on page.")
