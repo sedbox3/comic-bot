@@ -40,23 +40,34 @@ class SmartInpainter:
     - Adaptive kernel based on box height
     - Local background color sampling
     - Dual branch: solid fill for flat bubbles, LaMa for textured/gradient
+    - Fixed 512x512 tensor input for LaMa ONNX
     """
 
     def __init__(self, model_path: str = None):
         self.model_path = model_path or str(MODEL_DIR / "lama_fp32.onnx")
         self.session = None
+        self.input_names = []
+        self.output_names = []
         self._load_model()
 
     def _load_model(self):
         try:
             import onnxruntime as ort
             if os.path.exists(self.model_path) and os.path.getsize(self.model_path) > 1000:
+                # Leverage GPU if available, otherwise fast CPU
+                available_providers = ort.get_available_providers()
+                providers = ['CUDAExecutionProvider', 'CPUExecutionProvider'] if 'CUDAExecutionProvider' in available_providers else ['CPUExecutionProvider']
+                
+                sess_options = ort.SessionOptions()
+                sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+                
                 self.session = ort.InferenceSession(
                     self.model_path,
-                    providers=["CPUExecutionProvider"],
+                    sess_options=sess_options,
+                    providers=providers,
                 )
-                self.input_name = self.session.get_inputs()[0].name
-                self.mask_name = self.session.get_inputs()[1].name
+                self.input_names = [inp.name for inp in self.session.get_inputs()]
+                self.output_names = [out.name for out in self.session.get_outputs()]
                 logger.info(f"LaMa ONNX loaded: {self.model_path}")
             else:
                 logger.warning("LaMa ONNX not found, using OpenCV fallback only")
@@ -124,44 +135,75 @@ class SmartInpainter:
         result[y1:y2, x1:x2] = crop_bgr
         return result
 
-    def _lama_inpaint_region(self, image: np.ndarray, mask: np.ndarray) -> np.ndarray:
-        """Run LaMa ONNX on a region."""
-        h, w = image.shape[:2]
+    def _lama_inpaint_region(self, crop_bgr: np.ndarray, crop_mask: np.ndarray) -> np.ndarray:
+        """
+        Pads/resizes variable-sized crops to fixed 512x512 tensor for LaMa ONNX,
+        then maps the reconstructed region seamlessly back to original dimensions.
+        """
+        orig_h, orig_w = crop_bgr.shape[:2]
+        if orig_h == 0 or orig_w == 0:
+            return crop_bgr
 
-        # Pad to 8px multiple
-        pad_h = (8 - h % 8) % 8
-        pad_w = (8 - w % 8) % 8
-        if pad_h > 0 or pad_w > 0:
-            image = cv2.copyMakeBorder(image, 0, pad_h, 0, pad_w, cv2.BORDER_REFLECT)
-            mask = cv2.copyMakeBorder(mask, 0, pad_h, 0, pad_w, cv2.BORDER_CONSTANT, value=0)
+        # 1. Aspect-ratio preserving scale to fit inside 512x512
+        target_size = 512
+        scale = min(target_size / orig_h, target_size / orig_w)
+        new_w = int(orig_w * scale)
+        new_h = int(orig_h * scale)
 
-        # Normalize
-        img_float = image.astype(np.float32) / 255.0
-        img_float = np.transpose(img_float, (2, 0, 1))
-        img_float = np.expand_dims(img_float, 0)
+        resized_img = cv2.resize(crop_bgr, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+        resized_mask = cv2.resize(crop_mask, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
 
-        mask_float = mask.astype(np.float32) / 255.0
-        mask_float = np.expand_dims(np.expand_dims(mask_float, 0), 0)
+        # 2. Pad to exactly 512x512 (Letterboxing with edge reflection)
+        pad_top = (target_size - new_h) // 2
+        pad_bottom = target_size - new_h - pad_top
+        pad_left = (target_size - new_w) // 2
+        pad_right = target_size - new_w - pad_left
 
-        # Run inference
-        result = self.session.run(
-            None,
-            {self.input_name: img_float, self.mask_name: mask_float},
-        )[0]
+        padded_img = cv2.copyMakeBorder(resized_img, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_REFLECT)
+        padded_mask = cv2.copyMakeBorder(resized_mask, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_CONSTANT, value=0)
 
-        # Post-process
-        result = np.transpose(result[0], (1, 2, 0))
-        result = np.clip(result * 255, 0, 255).astype(np.uint8)
+        # 3. Normalize to [0, 1] NCHW tensors
+        img_tensor = padded_img.astype(np.float32) / 255.0
+        img_tensor = np.transpose(img_tensor, (2, 0, 1))
+        img_tensor = np.expand_dims(img_tensor, axis=0)  # Shape: (1, 3, 512, 512)
 
-        # Unpad
-        result = result[:h, :w]
+        mask_tensor = (padded_mask > 0).astype(np.float32)
+        mask_tensor = np.expand_dims(mask_tensor, axis=(0, 1))  # Shape: (1, 1, 512, 512)
 
-        # Blend
-        blend_mask = mask[:h, :w] > 0
-        output = image[:h, :w].copy()
-        output[blend_mask] = result[blend_mask]
+        # Map inputs dynamically based on model signature
+        inputs = {}
+        for inp_name in self.input_names:
+            if "mask" in inp_name.lower():
+                inputs[inp_name] = mask_tensor
+            else:
+                inputs[inp_name] = img_tensor
 
-        return output
+        # 4. Run Inference
+        try:
+            preds = self.session.run(self.output_names, inputs)[0]
+        except Exception as e:
+            logger.warning(f"LaMa inference failed: {e}. Falling back to fast OpenCV Telea.")
+            return cv2.inpaint(crop_bgr, crop_mask, 3, cv2.INPAINT_TELEA)
+
+        # 5. Extract output and unpad back to original crop resolution
+        out_img = preds[0]
+        if out_img.shape[0] == 3:
+            out_img = np.transpose(out_img, (1, 2, 0))  # Convert CHW to HWC
+        
+        # Clamp & convert to uint8 BGR
+        out_img = np.clip(out_img * 255.0 if out_img.max() <= 1.0 else out_img, 0, 255).astype(np.uint8)
+
+        # Crop out padding
+        unpadded = out_img[pad_top:pad_top + new_h, pad_left:pad_left + new_w]
+        
+        # Resize back to exact original crop dimensions
+        restored = cv2.resize(unpadded, (orig_w, orig_h), interpolation=cv2.INTER_CUBIC)
+
+        # Blend only modified mask pixels back onto original canvas
+        mask_3ch = cv2.cvtColor(crop_mask, cv2.COLOR_GRAY2BGR) / 255.0
+        final_crop = (restored * mask_3ch + crop_bgr * (1.0 - mask_3ch)).astype(np.uint8)
+        
+        return final_crop
 
 
 class LaMaInpainter:
