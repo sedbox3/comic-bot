@@ -45,13 +45,12 @@ def get_settings():
     }
 
 
-def build_pipeline():
-    """Build pipeline with current settings."""
-    settings = get_settings()
+def build_pipeline(llm_api_key: str, llm_base_url: str, llm_model: str):
+    """Build pipeline with explicit settings (no request context needed)."""
     return ComicPipeline(
-        llm_api_key=settings["llm_api_key"],
-        llm_base_url=settings["llm_base_url"],
-        llm_model=settings["llm_model"],
+        llm_api_key=llm_api_key,
+        llm_base_url=llm_base_url,
+        llm_model=llm_model,
     )
 
 
@@ -131,17 +130,26 @@ def process_file(job_id):
             return jsonify({"error": "Job already processing"}), 409
         active_jobs[job_id] = {"status": "processing"}
 
-    def run_pipeline():
-        """Run pipeline in background thread."""
-        try:
-            pipeline = build_pipeline()
+    # CRITICAL: Extract ALL request-bound data BEFORE launching thread
+    settings = get_settings()  # Extract session data while context is active
+    pipeline_input_path = str(input_path)
+    pipeline_output_path = str(job_dir / f"translated_{input_path.stem}.cbz") if ext in {".cbz", ".cbr"} else str(job_dir / f"translated_{input_path.name}")
+    is_archive = ext in {".cbz", ".cbr"}
 
-            if ext in {".cbz", ".cbr"}:
-                output_path = str(job_dir / f"translated_{input_path.stem}.cbz")
-                result = pipeline.process(str(input_path), output_path)
+    def run_pipeline():
+        """Run pipeline in background thread (no request context needed)."""
+        try:
+            # Build pipeline with pre-extracted settings (plain strings, no session)
+            pipeline = build_pipeline(
+                llm_api_key=settings["llm_api_key"],
+                llm_base_url=settings["llm_base_url"],
+                llm_model=settings["llm_model"],
+            )
+
+            if is_archive:
+                result = pipeline.process(pipeline_input_path, pipeline_output_path)
             else:
-                output_path = str(job_dir / f"translated_{input_path.name}")
-                result = pipeline.process_image(str(input_path), output_path)
+                result = pipeline.process_image(pipeline_input_path, pipeline_output_path)
 
             with job_lock:
                 active_jobs[job_id] = {
