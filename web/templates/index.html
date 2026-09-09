@@ -283,34 +283,69 @@
       }, 3000);
 
       try {
+        // Start processing (returns immediately, runs in background)
         const res = await fetch('/api/process/' + currentJobId, {
           method: 'POST',
         });
 
+        const startData = await res.json();
+        if (!res.ok) {
+          throw new Error(startData.error || 'Failed to start processing');
+        }
+
+        // Poll for status
+        await pollJobStatus();
+
         clearInterval(phaseInterval);
 
-        const data = await res.json();
-        if (res.ok) {
-          // Mark all steps done
-          for (let i = 2; i <= 5; i++) setStep(i, 'done');
-          progressFill.style.width = '100%';
-          progressPercent.textContent = '100%';
-          progressPhase.textContent = 'اكتمل!';
+        // Mark all steps done
+        for (let i = 2; i <= 5; i++) setStep(i, 'done');
+        progressFill.style.width = '100%';
+        progressPercent.textContent = '100%';
+        progressPhase.textContent = 'اكتمل!';
 
-          // Show result
-          setTimeout(() => {
-            progressSection.classList.add('hidden');
-            resultSection.classList.remove('hidden');
-            resultFilename.textContent = data.result_file;
-            downloadBtn.href = '/api/download/' + currentJobId + '/' + data.result_file;
-          }, 500);
-        } else {
-          throw new Error(data.error || 'Processing failed');
-        }
+        // Show result
+        setTimeout(() => {
+          progressSection.classList.add('hidden');
+          resultSection.classList.remove('hidden');
+          resultFilename.textContent = lastJobResult.result_file;
+          downloadBtn.href = '/api/download/' + currentJobId + '/' + lastJobResult.result_file;
+        }, 500);
+
       } catch (err) {
         clearInterval(phaseInterval);
         showError(err.message);
       }
+    }
+
+    let lastJobResult = null;
+
+    async function pollJobStatus() {
+      const maxAttempts = 600; // 10 minutes max
+      const interval = 2000; // Poll every 2 seconds
+      let attempts = 0;
+
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, interval));
+        attempts++;
+
+        try {
+          const res = await fetch('/api/status/' + currentJobId);
+          const data = await res.json();
+
+          if (data.status === 'completed') {
+            lastJobResult = data;
+            return;
+          } else if (data.status === 'error') {
+            throw new Error(data.error || 'Processing failed');
+          }
+          // else 'processing' - continue polling
+        } catch (e) {
+          if (attempts > 3) throw e; // Ignore first few network errors
+        }
+      }
+
+      throw new Error('Processing timed out');
     }
 
     function showError(msg) {

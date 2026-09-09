@@ -6,6 +6,7 @@ import uuid
 import shutil
 import tempfile
 import logging
+import threading
 from pathlib import Path
 
 from flask import Flask, render_template, request, jsonify, send_file, session
@@ -28,6 +29,10 @@ TEMP_DIR.mkdir(exist_ok=True)
 
 # Store user settings in memory (per-session)
 user_settings = {}
+
+# Track active jobs for background processing
+active_jobs = {}
+job_lock = threading.Lock()
 
 
 def get_settings():
@@ -120,25 +125,53 @@ def process_file(job_id):
     input_path = files[0]
     ext = input_path.suffix.lower()
 
-    try:
-        pipeline = build_pipeline()
+    # Check if job is already running
+    with job_lock:
+        if job_id in active_jobs:
+            return jsonify({"error": "Job already processing"}), 409
+        active_jobs[job_id] = {"status": "processing"}
 
-        if ext in {".cbz", ".cbr"}:
-            output_path = str(job_dir / f"translated_{input_path.stem}.cbz")
-            result = pipeline.process(str(input_path), output_path)
-        else:
-            output_path = str(job_dir / f"translated_{input_path.name}")
-            result = pipeline.process_image(str(input_path), output_path)
+    def run_pipeline():
+        """Run pipeline in background thread."""
+        try:
+            pipeline = build_pipeline()
 
-        return jsonify({
-            "status": "ok",
-            "result_file": Path(result).name,
-            "job_id": job_id,
-        })
+            if ext in {".cbz", ".cbr"}:
+                output_path = str(job_dir / f"translated_{input_path.stem}.cbz")
+                result = pipeline.process(str(input_path), output_path)
+            else:
+                output_path = str(job_dir / f"translated_{input_path.name}")
+                result = pipeline.process_image(str(input_path), output_path)
 
-    except Exception as e:
-        logger.error(f"Processing failed: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+            with job_lock:
+                active_jobs[job_id] = {
+                    "status": "completed",
+                    "result_file": Path(result).name,
+                }
+            logger.info(f"Job {job_id} completed successfully")
+
+        except Exception as e:
+            logger.error(f"Processing failed for {job_id}: {e}", exc_info=True)
+            with job_lock:
+                active_jobs[job_id] = {"status": "error", "error": str(e)}
+
+    # Start background thread
+    thread = threading.Thread(target=run_pipeline, daemon=True)
+    thread.start()
+
+    return jsonify({
+        "status": "started",
+        "job_id": job_id,
+    })
+
+
+@app.route("/api/status/<job_id>")
+def job_status(job_id):
+    """Check job processing status."""
+    with job_lock:
+        if job_id not in active_jobs:
+            return jsonify({"status": "unknown"})
+        return jsonify(active_jobs[job_id])
 
 
 @app.route("/api/download/<job_id>/<filename>")
@@ -165,4 +198,4 @@ def cleanup_job(job_id):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)

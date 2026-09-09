@@ -17,6 +17,7 @@ import json
 import numpy as np
 import logging
 import gc
+import tempfile
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Tuple, Optional, Dict
@@ -27,7 +28,8 @@ if str(BT_PATH) not in sys.path:
 
 logger = logging.getLogger(__name__)
 
-DEBUG_CROPS = Path(__file__).parent.parent / "debug_crops"
+# Use temp directory for debug crops to avoid triggering auto-reloader
+DEBUG_CROPS = Path(tempfile.gettempdir()) / "comic_translator" / "debug_crops"
 
 
 def extract_text_style(crop_bgr: np.ndarray, text_mask: np.ndarray) -> Tuple[Tuple[int, int, int], bool]:
