@@ -1,492 +1,206 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl" class="dark">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sedbox Comics - أكبر مكتبة كوميكس عربية</title>
-  <meta name="description" content="استمتع بآلاف القصص المصورة العربية بجودة عالية. قراءة مجانية بدون إعلانات.">
-  <meta name="keywords" content="كوميكس, قصص مصورة, مانجا عربية, كرتون, قراءة مجانية">
-  <meta name="robots" content="index, follow">
-  <meta property="og:title" content="Sedbox Comics - أكبر مكتبة كوميكس عربية">
-  <link rel="canonical" href="https://sedbox3.netlify.app/">
-  
+  <title>سِدبوكس كوميكس — ترجمة كوميكس عربي</title>
+  <meta name="description" content="بوت تليجرام مجاني يترجم كوميكس الإنجليزية إلى العربية بجودة احترافية. رفع الملفات واحصل على النتيجة فوراً.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css">
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            dark: { 900: '#0f0f13', 800: '#13131a', 700: '#1a1a24', 600: '#22222e', 500: '#2a2a38' },
-            accent: { DEFAULT: '#7c3aed', light: '#8b5cf6', dark: '#6d28d9' },
-            golden: '#fbbf24'
-          },
-          fontFamily: { sans: ['Inter', 'sans-serif'] }
-        }
-      }
-    }
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-  <style>
-    * { scrollbar-width: thin; scrollbar-color: #7c3aed #1a1a24; }
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #1a1a24; }
-    ::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 4px; }
-    .swiper-slide { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-    .swiper-slide-active { transform: scale(1.05); z-index: 10; }
-    .comic-card { transition: all 0.3s ease; }
-    .comic-card:hover { transform: translateY(-8px); }
-    .comic-card:hover .cover-img { transform: scale(1.1); }
-    .cover-img { transition: transform 0.5s ease; }
-    .card-shine { background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.03) 100%); }
-    .glass { background: rgba(26, 26, 36, 0.8); backdrop-filter: blur(12px); }
-    .tab-active { background: #7c3aed; color: white; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4); }
-    .update-item:hover { background: rgba(124, 58, 237, 0.1); }
-    .category-chip { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: #1a1a24; border: 2px solid #22222e; border-radius: 9999px; color: #9ca3af; font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-    .category-chip:hover, .category-chip.active { background: #7c3aed; color: white; border-color: #7c3aed; }
-    .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
-    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    
-    /* Language Switcher */
-    .lang-dropdown { position: absolute; top: 100%; right: 0; min-width: 180px; background: #1a1a24; border: 2px solid #22222e; border-radius: 12px; padding: 0.5rem; z-index: 100; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-    .lang-option { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0.75rem; border-radius: 8px; cursor: pointer; transition: all 0.2s; color: #9ca3af; }
-    .lang-option:hover { background: rgba(124, 58, 237, 0.1); color: white; }
-    .lang-option.active { background: #7c3aed; color: white; }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-dark-900 text-white font-sans min-h-screen">
+<body>
 
   <!-- Navbar -->
-  <nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-dark-600">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-      
-      <!-- Logo -->
-      <a href="index.html" class="flex items-center gap-3 flex-shrink-0">
-        <div class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/30">
-          <i class="fas fa-book-open text-white text-lg"></i>
-        </div>
-        <span class="text-xl font-bold hidden sm:block">Sed<span class="text-accent">box</span></span>
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="#" class="logo">
+        <span class="logo-icon">📚</span>
+        <span class="logo-text">سِدبوكس</span>
       </a>
-
-      <!-- Nav Links -->
-      <div class="hidden md:flex items-center gap-1">
-        <a href="index.html" class="px-4 py-2 rounded-lg bg-accent/10 text-accent font-medium text-sm" data-i18n="home">الرئيسية</a>
-        <a href="browse.html" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm" data-i18n="browse">تصفح</a>
-        <a href="browse.html?filter=popular" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm" data-i18n="trending">الأكثر قراءة</a>
-        <a href="browse.html?filter=latest" class="px-4 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-dark-600 transition font-medium text-sm" data-i18n="latest">أحدث الإضافات</a>
+      <div class="nav-links">
+        <a href="#features">المميزات</a>
+        <a href="#how-it-works">كيف يعمل</a>
+        <a href="#bot">البوت</a>
       </div>
-
-      <!-- Search -->
-      <div class="flex-1 max-w-md hidden sm:block">
-        <div class="relative">
-          <input type="text" id="searchInput" data-i18n-placeholder="searchCtrlK" placeholder="ابحث... (Ctrl+K)" 
-                 class="w-full bg-dark-700 border border-dark-500 rounded-full px-4 py-2 pl-10 pr-20 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-accent transition"
-                 onkeypress="if(event.key==='Enter') doSearch(this.value)">
-          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
-          <kbd class="absolute right-3 top-1/2 -translate-y-1/2 bg-dark-600 text-gray-400 text-xs px-2 py-0.5 rounded border border-dark-500">Ctrl+K</kbd>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="flex items-center gap-2">
-        <!-- Language Switcher -->
-        <div class="relative" id="langSwitcher">
-          <button onclick="toggleLangDropdown()" class="w-10 h-10 rounded-full bg-dark-700 border border-dark-500 flex items-center justify-center text-lg hover:border-accent transition" id="currentLangBtn">
-            🌐
-          </button>
-          <div id="langDropdown" class="lang-dropdown hidden"></div>
-        </div>
-        
-        <a href="admin/login.html" class="hidden sm:flex items-center gap-2 bg-accent hover:bg-accent-dark text-white px-4 py-2 rounded-full text-sm font-semibold transition shadow-lg shadow-accent/30">
-          <i class="fas fa-user"></i>
-          <span data-i18n="signUp">تسجيل</span>
-        </a>
-        <button onclick="toggleMobileMenu()" class="md:hidden w-10 h-10 rounded-lg bg-dark-700 flex items-center justify-center text-gray-400">
-          <i class="fas fa-bars"></i>
-        </button>
-      </div>
-    </div>
-    
-    <!-- Mobile Menu -->
-    <div id="mobileMenu" class="hidden md:hidden border-t border-dark-600 bg-dark-800">
-      <div class="p-4 space-y-2">
-        <a href="index.html" class="block px-4 py-3 rounded-lg bg-accent/10 text-accent font-medium" data-i18n="home">الرئيسية</a>
-        <a href="browse.html" class="block px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-600" data-i18n="browse">تصفح</a>
-        <a href="browse.html?filter=popular" class="block px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-600" data-i18n="trending">الأكثر قراءة</a>
-        <a href="browse.html?filter=latest" class="block px-4 py-3 rounded-lg text-gray-400 hover:bg-dark-600" data-i18n="latest">أحدث الإضافات</a>
-      </div>
+      <a href="https://t.me/sedboxcomic_bot" class="btn btn-primary btn-sm" target="_blank">
+        ابدأ الآن
+      </a>
     </div>
   </nav>
 
-  <!-- Hero Slider -->
-  <section class="pt-20 pb-8" style="background: linear-gradient(135deg, #0f0f13 0%, #1a1025 50%, #0f0f13 100%);">
-    <div class="max-w-7xl mx-auto px-4">
-      <div class="swiper hero-swiper py-8">
-        <div class="swiper-wrapper" id="heroSlider"></div>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero-container">
+      <div class="hero-content">
+        <div class="hero-badge">بوت تليجرام مجاني</div>
+        <h1>ترجم كوميكسك <span class="gradient-text">إلى العربية</span> بثانية</h1>
+        <p class="hero-desc">ارفع ملف CBZ أو CBR أو صورة واحدة، وسيقوم البوت تلقائياً باكتشاف الفقاعات، إزالة النص الإنجليزي، وترجمته إلى العربية بتصميم احترافي.</p>
+        <div class="hero-actions">
+          <a href="https://t.me/sedboxcomic_bot" class="btn btn-primary btn-lg" target="_blank">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+            افتح البوت
+          </a>
+          <a href="#how-it-works" class="btn btn-outline btn-lg">كيف يعمل؟</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="stat-number">مجاني</span>
+            <span class="stat-label">بدون اشتراك</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-number">فوري</span>
+            <span class="stat-label">نتيجة خلال ثوانٍ</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat">
+            <span class="stat-number">ذكي</span>
+            <span class="stat-label">تصميم احترافي</span>
+          </div>
+        </div>
+      </div>
+      <div class="hero-visual">
+        <div class="phone-mockup">
+          <div class="phone-screen">
+            <div class="chat-header">
+              <div class="chat-avatar">📚</div>
+              <div class="chat-info">
+                <span class="chat-name">سِدبوكس كوميكس</span>
+                <span class="chat-status">متصل</span>
+              </div>
+            </div>
+            <div class="chat-messages">
+              <div class="message user-message">مرحباً! أريد ترجمة هذا الكوميك</div>
+              <div class="message bot-message">
+                <div class="typing-indicator">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+              <div class="message bot-message">جاري معالجة الصورة... ⏳</div>
+              <div class="message bot-message progress-message">
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: 75%"></div>
+                </div>
+                <span>████████░░░░ 75% (15/20)</span>
+              </div>
+              <div class="message bot-message">تم! ✅ تفضل بالصورة المترجمة</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- Main Content -->
-  <main class="max-w-7xl mx-auto px-4 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-      <!-- Left Column -->
-      <div class="lg:col-span-8 space-y-12">
-        
-        <!-- Trending Comics -->
-        <section>
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold flex items-center gap-3">
-              <span class="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center">
-                <i class="fas fa-fire text-accent"></i>
-              </span>
-              <span data-i18n="trendingComics">كوميكس رائجة</span>
-            </h2>
-            <a href="browse.html?filter=popular" class="text-accent hover:text-accent-light text-sm font-medium flex items-center gap-1 transition" data-i18n="viewAll">عرض الكل <i class="fas fa-arrow-left text-xs"></i></a>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="trendingComics"></div>
-        </section>
-
-        <!-- Trending Novels -->
-        <section>
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold flex items-center gap-3">
-              <span class="w-10 h-10 bg-golden/20 rounded-lg flex items-center justify-center">
-                <i class="fas fa-book-open text-golden"></i>
-              </span>
-              <span data-i18n="trendingNovels">روايات رائجة</span>
-              <span class="text-xs bg-golden/20 text-golden px-2 py-0.5 rounded-full font-medium">Beta</span>
-            </h2>
-            <a href="browse.html" class="text-accent hover:text-accent-light text-sm font-medium flex items-center gap-1 transition" data-i18n="viewAll">عرض الكل <i class="fas fa-arrow-left text-xs"></i></a>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="trendingNovels"></div>
-        </section>
-
-        <!-- Latest Updates -->
-        <section>
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-2xl font-bold flex items-center gap-3">
-              <span class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                <i class="fas fa-clock text-green-500"></i>
-              </span>
-              <span data-i18n="latestUpdates">آخر التحديثات</span>
-            </h2>
-            <a href="browse.html?filter=latest" class="text-accent hover:text-accent-light text-sm font-medium flex items-center gap-1 transition" data-i18n="viewAll">عرض الكل <i class="fas fa-arrow-left text-xs"></i></a>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="latestUpdates"></div>
-        </section>
+  <!-- Features -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <h2>مميزات <span class="gradient-text">قوية</span></h2>
+        <p>كل ما تحتاجه لترجمة كوميكسك بجودة احترافية</p>
       </div>
-
-      <!-- Right Column - Sidebar -->
-      <aside class="lg:col-span-4 space-y-8">
-        
-        <!-- Popular -->
-        <div class="bg-dark-700 rounded-2xl border border-dark-500 overflow-hidden">
-          <div class="p-4 border-b border-dark-500">
-            <h3 class="text-lg font-bold flex items-center gap-2">
-              <i class="fas fa-crown text-golden"></i>
-              <span data-i18n="trending">الأكثر قراءة</span>
-            </h3>
-          </div>
-          <div class="divide-y divide-dark-500" id="rankingList"></div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">🔍</div>
+          <h3>كشف ذكي</h3>
+          <p>يكتشف فقاعات الكلام تلقائياً بأي شكل أو حجم، حتى الفقاعات الصغيرة</p>
         </div>
-
-        <!-- Editor's Pick -->
-        <div class="relative rounded-2xl overflow-hidden group cursor-pointer" id="editorsPick">
-          <img src="" alt="" class="w-full h-80 object-cover group-hover:scale-105 transition duration-500">
-          <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent"></div>
-          <div class="absolute bottom-0 left-0 right-0 p-6">
-            <span class="text-xs bg-accent px-2 py-1 rounded-full font-medium">Editor's Pick</span>
-            <h3 class="text-xl font-bold mt-2 mb-1" id="pickTitle"></h3>
-            <p class="text-gray-400 text-sm line-clamp-2" id="pickDesc"></p>
-          </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎨</div>
+          <h3>إزالة النص</h3>
+          <p>يمح النص الإنجليزي بذكاء ويرسم الخلفية بدقة ت Preserve الألوان والأصلي</p>
         </div>
-
-        <!-- Quick Links -->
-        <div class="bg-dark-700 rounded-2xl border border-dark-500 p-6">
-          <h3 class="text-lg font-bold mb-4" data-i18n="quickActions">إجراءات سريعة</h3>
-          <div class="space-y-2">
-            <a href="browse.html?filter=popular" class="flex items-center gap-3 p-3 rounded-xl hover:bg-dark-600 transition group">
-              <div class="w-10 h-10 bg-accent/20 rounded-lg flex items-center justify-center group-hover:bg-accent/30 transition">
-                <i class="fas fa-fire text-accent"></i>
-              </div>
-              <div>
-                <div class="font-medium text-sm" data-i18n="trendingComics">كوميكس رائجة</div>
-              </div>
-            </a>
-            <a href="browse.html?filter=latest" class="flex items-center gap-3 p-3 rounded-xl hover:bg-dark-600 transition group">
-              <div class="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center group-hover:bg-green-500/30 transition">
-                <i class="fas fa-clock text-green-500"></i>
-              </div>
-              <div>
-                <div class="font-medium text-sm" data-i18n="latestUpdates">آخر التحديثات</div>
-              </div>
-            </a>
-            <a href="browse.html" class="flex items-center gap-3 p-3 rounded-xl hover:bg-dark-600 transition group">
-              <div class="w-10 h-10 bg-golden/20 rounded-lg flex items-center justify-center group-hover:bg-golden/30 transition">
-                <i class="fas fa-th-large text-golden"></i>
-              </div>
-              <div>
-                <div class="font-medium text-sm" data-i18n="browse">تصفح</div>
-              </div>
-            </a>
-          </div>
+        <div class="feature-card">
+          <div class="feature-icon">📝</div>
+          <h3>قراءة النص</h3>
+          <p>يقرأ النص الإنجليزي بدقة عالية حتى من الصور المعقدة</p>
         </div>
-      </aside>
+        <div class="feature-card">
+          <div class="feature-icon">🌐</div>
+          <h3>ترجمة ذكية</h3>
+          <p>يترجم النص إلى العربية باستخدام نماذج ذكاء اصطناعي متقدمة</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">✨</div>
+          <h3>تصميم احترافي</h3>
+          <p>يعيد كتابة النص العربي بخط جميل ومتوافق مع RTL داخل الفقاعة</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📦</div>
+          <h3>دعم كامل</h3>
+          <p>يدعم ملفات CBZ و CBR والصور单立. يعالج الأرشيفات المضغطة تلقائياً</p>
+        </div>
+      </div>
     </div>
-  </main>
+  </section>
+
+  <!-- How it works -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="container">
+      <div class="section-header">
+        <h2>كيف <span class="gradient-text">يعمل</span>؟</h2>
+        <p>ثلاث خطوات بسيطة للحصول على كوميك مترجم</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">١</div>
+          <div class="step-content">
+            <h3>ارفع الملف</h3>
+            <p>أرسل ملف CBZ أو CBR أو صورة واحدة للبوت عبر تليجرام</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <div class="step-number">٢</div>
+          <div class="step-content">
+            <h3>المعالجة التلقائية</h3>
+            <p>يكتشف الفقاعات، يزيل النص، يقرأه، وترجمه — كل ذلك تلقائياً</p>
+          </div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step">
+          <div class="step-number">٣</div>
+          <div class="step-content">
+            <h3>استلم النتيجة</h3>
+            <p>ستتلقى الملف المترجم بتصميم عربي احترافي جاهز للقراءة</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bot CTA -->
+  <section class="bot-cta" id="bot">
+    <div class="container">
+      <div class="cta-card">
+        <div class="cta-content">
+          <h2>جاهز للبدء؟</h2>
+          <p>افتح البوت الآن وجرّب بنفسك. مجاني تماماً بدون تسجيل.</p>
+          <a href="https://t.me/sedboxcomic_bot" class="btn btn-primary btn-xl" target="_blank">
+            🚀 افتح البوت على تليجرام
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- Footer -->
-  <footer class="bg-dark-800 border-t border-dark-600 mt-12">
-    <div class="max-w-7xl mx-auto px-4 py-12">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-        <div>
-          <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 bg-accent rounded-xl flex items-center justify-center">
-              <i class="fas fa-book-open text-white"></i>
-            </div>
-            <span class="text-xl font-bold">Sed<span class="text-accent">box</span></span>
-          </div>
-          <p class="text-gray-500 text-sm leading-relaxed" data-i18n="footerDesc">أكبر مكتبة كوميكس عربية مجانية</p>
-        </div>
-        <div>
-          <h4 class="font-bold mb-4" data-i18n="navigation">التنقل</h4>
-          <div class="space-y-2 text-sm">
-            <a href="index.html" class="block text-gray-400 hover:text-accent transition" data-i18n="home">الرئيسية</a>
-            <a href="browse.html" class="block text-gray-400 hover:text-accent transition" data-i18n="browse">تصفح</a>
-            <a href="browse.html?filter=popular" class="block text-gray-400 hover:text-accent transition" data-i18n="trending">الأكثر قراءة</a>
-            <a href="browse.html?filter=latest" class="block text-gray-400 hover:text-accent transition" data-i18n="latest">أحدث الإضافات</a>
-          </div>
-        </div>
-        <div>
-          <h4 class="font-bold mb-4" data-i18n="genres">التصنيفات</h4>
-          <div class="space-y-2 text-sm" id="footerGenres"></div>
-        </div>
-        <div>
-          <h4 class="font-bold mb-4" data-i18n="admin">الإدارة</h4>
-          <div class="space-y-2 text-sm">
-            <a href="admin/login.html" class="block text-gray-400 hover:text-accent transition" data-i18n="dashboard">لوحة التحكم</a>
-          </div>
-        </div>
+  <footer class="footer">
+    <div class="container footer-container">
+      <div class="footer-brand">
+        <span class="logo-icon">📚</span>
+        <span class="logo-text">سِدبوكس كوميكس</span>
       </div>
-      <div class="border-t border-dark-600 mt-8 pt-8 text-center text-gray-500 text-sm">
-        © 2026 Sedbox Comics. <span data-i18n="allRights">جميع الحقوق محفوظة</span>.
+      <p class="footer-desc">بوت تليجرام مجاني لترجمة كوميكس الإنجليزية إلى العربية بجودة احترافية.</p>
+      <div class="footer-links">
+        <a href="https://t.me/sedboxcomic_bot" target="_blank">البوت</a>
+        <a href="https://github.com/sedbox3/comicx-arabic" target="_blank">GitHub</a>
+        <a href="https://t.me/sedbox3" target="_blank">القناة</a>
       </div>
+      <p class="footer-copy">© 2026 سِدبوكس كوميكس. جميع الحقوق محفوظة.</p>
     </div>
   </footer>
 
-  <script src="js/i18n.js"></script>
-  <script src="js/db.js"></script>
-  <script>
-    // Language Switcher
-    let langDropdownOpen = false;
-    
-    function toggleLangDropdown() {
-      langDropdownOpen = !langDropdownOpen;
-      document.getElementById('langDropdown').classList.toggle('hidden', !langDropdownOpen);
-      if (langDropdownOpen) renderLangDropdown();
-    }
-    
-    function renderLangDropdown() {
-      const dropdown = document.getElementById('langDropdown');
-      const languages = I18N.supported;
-      
-      dropdown.innerHTML = languages.map(lang => `
-        <div class="lang-option ${lang === I18N.current ? 'active' : ''}" onclick="changeLang('${lang}')">
-          <span class="text-lg">${I18N.getFlag(lang)}</span>
-          <span class="text-sm">${I18N.getLanguageName(lang)}</span>
-        </div>
-      `).join('');
-    }
-    
-    function changeLang(lang) {
-      I18N.changeLanguage(lang);
-      document.getElementById('currentLangBtn').textContent = I18N.getFlag(lang);
-      toggleLangDropdown();
-      location.reload();
-    }
-    
-    // Initialize language
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('currentLangBtn').textContent = I18N.getFlag(I18N.current);
-    });
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('#langSwitcher')) {
-        document.getElementById('langDropdown').classList.add('hidden');
-        langDropdownOpen = false;
-      }
-    });
-    
-    // Hero Slider
-    function initHeroSlider(comics) {
-      const slider = document.getElementById('heroSlider');
-      const featured = comics.slice(0, 6);
-      
-      slider.innerHTML = featured.map(comic => `
-        <div class="swiper-slide">
-          <a href="comic.html?id=${comic.id}" class="block relative rounded-2xl overflow-hidden h-[400px] md:h-[450px] group">
-            <img src="${comic.cover}" alt="${comic.title}" class="w-full h-full object-cover group-hover:scale-110 transition duration-700">
-            <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent"></div>
-            <div class="absolute top-4 right-4 bg-accent px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1 shadow-lg">
-              <i class="fas fa-star text-golden text-xs"></i> ${(comic.rating || 0).toFixed(1)}
-            </div>
-            <div class="absolute bottom-0 left-0 right-0 p-6">
-              <h3 class="text-2xl font-bold mb-2">${comic.title}</h3>
-              <div class="flex items-center gap-3 text-sm text-gray-300">
-                <span class="bg-accent/30 text-accent px-2 py-0.5 rounded">${comic.category || 'Manga'}</span>
-                <span><i class="fas fa-eye"></i> ${formatNumber(comic.views || 0)}</span>
-              </div>
-            </div>
-          </a>
-        </div>
-      `).join('');
-
-      new Swiper('.hero-swiper', {
-        slidesPerView: 1.5,
-        centeredSlides: true,
-        spaceBetween: 20,
-        loop: true,
-        autoplay: { delay: 4000, disableOnInteraction: false },
-        breakpoints: {
-          640: { slidesPerView: 2 },
-          768: { slidesPerView: 2.5 },
-          1024: { slidesPerView: 3 }
-        }
-      });
-    }
-
-    // Comic Card
-    function renderComicCard(comic) {
-      return `
-        <a href="comic.html?id=${comic.id}" class="comic-card block bg-dark-700 rounded-xl overflow-hidden border border-dark-500 hover:border-accent/50 transition group">
-          <div class="relative aspect-[3/4] overflow-hidden">
-            <img src="${comic.cover}" alt="${comic.title}" class="cover-img w-full h-full object-cover">
-            <div class="absolute inset-0 card-shine"></div>
-            <div class="absolute top-2 right-2 bg-accent/90 backdrop-blur px-2 py-0.5 rounded-md text-xs font-bold">${comic.category || 'Manga'}</div>
-            <div class="absolute top-2 left-2 bg-black/70 backdrop-blur px-2 py-0.5 rounded-md text-xs font-medium flex items-center gap-1">
-              <i class="fas fa-star text-golden text-[10px]"></i> ${(comic.rating || 0).toFixed(1)}
-            </div>
-          </div>
-          <div class="p-3">
-            <h4 class="font-semibold text-sm line-clamp-1 group-hover:text-accent transition">${comic.title}</h4>
-            <div class="text-gray-500 text-xs mt-1 flex items-center gap-2">
-              <span><i class="fas fa-eye"></i> ${formatNumber(comic.views || 0)}</span>
-            </div>
-          </div>
-        </a>`;
-    }
-
-    // Ranking Item
-    function renderRankingItem(comic, rank) {
-      const badges = ['bg-golden text-black', 'bg-gray-300 text-black', 'bg-amber-700 text-white'];
-      const badgeClass = rank <= 3 ? badges[rank - 1] : 'bg-dark-500 text-gray-400';
-      
-      return `
-        <a href="comic.html?id=${comic.id}" class="flex items-center gap-3 p-3 hover:bg-dark-600 transition group">
-          <div class="w-8 h-8 rounded-lg ${badgeClass} flex items-center justify-center text-sm font-bold flex-shrink-0">${rank}</div>
-          <img src="${comic.cover}" alt="${comic.title}" class="w-12 h-16 object-cover rounded-lg flex-shrink-0">
-          <div class="flex-1 min-w-0">
-            <h4 class="font-medium text-sm line-clamp-1 group-hover:text-accent transition">${comic.title}</h4>
-            <div class="flex items-center gap-1 mt-1">
-              <i class="fas fa-star text-golden text-[10px]"></i>
-              <span class="text-xs text-gray-400">${(comic.rating || 0).toFixed(1)}</span>
-            </div>
-          </div>
-        </a>`;
-    }
-
-    // Latest Update Item
-    function renderUpdateItem(comic, chapters) {
-      const chList = chapters.slice(0, 3);
-      return `
-        <a href="comic.html?id=${comic.id}" class="update-item flex gap-4 p-4 bg-dark-700 rounded-xl border border-dark-500 hover:border-accent/30 transition">
-          <img src="${comic.cover}" alt="${comic.title}" class="w-20 h-28 object-cover rounded-lg flex-shrink-0">
-          <div class="flex-1 min-w-0">
-            <h4 class="font-semibold line-clamp-1 hover:text-accent transition">${comic.title}</h4>
-            <div class="mt-2 space-y-1">
-              ${chList.map((ch, i) => `
-                <div class="flex items-center gap-2 text-xs">
-                  <span class="bg-accent/20 text-accent px-2 py-0.5 rounded font-medium">Ch. ${ch.number || i + 1}</span>
-                  <span class="text-gray-500">${ch.title}</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        </a>`;
-    }
-
-    function formatNumber(num) {
-      if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-      if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-      return num.toString();
-    }
-
-    function toggleMobileMenu() {
-      document.getElementById('mobileMenu').classList.toggle('hidden');
-    }
-
-    function doSearch(val) {
-      if (val.trim()) window.location.href = `browse.html?search=${encodeURIComponent(val.trim())}`;
-    }
-
-    document.addEventListener('keydown', e => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        document.getElementById('searchInput').focus();
-      }
-    });
-
-    // Init
-    document.addEventListener('DOMContentLoaded', async function() {
-      await DB.init();
-      
-      const allComics = await DB.getLatestComics(50);
-      
-      initHeroSlider(allComics);
-      
-      const trending = await DB.getMostViewedComics(8);
-      document.getElementById('trendingComics').innerHTML = trending.map(renderComicCard).join('') ||
-        `<p class="col-span-full text-center py-8 text-gray-500">${I18N.t('noComics')}</p>`;
-      
-      document.getElementById('trendingNovels').innerHTML = trending.slice(0, 4).map(c => renderComicCard({...c, category: 'Novel'})).join('');
-      
-      const latest = allComics.slice(0, 6);
-      const latestHtml = [];
-      for (const comic of latest) {
-        const chapters = await DB.getChapters(comic.id);
-        chapters.sort((a, b) => (b.number || 0) - (a.number || 0));
-        latestHtml.push(renderUpdateItem(comic, chapters.slice(0, 3)));
-      }
-      document.getElementById('latestUpdates').innerHTML = latestHtml.join('') || 
-        `<p class="col-span-full text-center py-8 text-gray-500">${I18N.t('noUpdates')}</p>`;
-      
-      const popular = await DB.getMostViewedComics(10);
-      document.getElementById('rankingList').innerHTML = popular.map((c, i) => renderRankingItem(c, i + 1)).join('');
-      
-      if (allComics.length > 0) {
-        const pick = allComics[Math.floor(Math.random() * Math.min(5, allComics.length))];
-        const pickChapters = await DB.getChapters(pick.id);
-        document.getElementById('editorsPick').querySelector('img').src = pick.cover;
-        document.getElementById('pickTitle').textContent = pick.title;
-        document.getElementById('pickDesc').textContent = pick.description || pick.title;
-        document.getElementById('editorsPick').onclick = () => window.location.href = `comic.html?id=${pick.id}`;
-      }
-      
-      const categories = await DB.getCategories();
-      document.getElementById('footerGenres').innerHTML = categories.slice(0, 6).map(c => 
-        `<a href="browse.html?category=${c.name}" class="block text-gray-400 hover:text-accent transition">${c.name}</a>`
-      ).join('');
-    });
-  </script>
 </body>
 </html>
