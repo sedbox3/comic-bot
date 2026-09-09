@@ -39,8 +39,8 @@ class LLMTranslator:
         system_prompt: Optional[str] = None,
     ):
         self.api_key = api_key or os.getenv("LLM_API_KEY", "")
-        self.base_url = (base_url or os.getenv("LLM_BASE_URL", "https://openrouter.ai/api/v1")).rstrip("/")
-        self.model = model or os.getenv("LLM_MODEL", "minimax/minimax-m3:free")
+        self.base_url = (base_url or os.getenv("LLM_BASE_URL", "https://api.orcarouter.ai/v1")).rstrip("/")
+        self.model = model or os.getenv("LLM_MODEL", "z-ai/glm-5.3-flash-free")
         self.system_prompt = system_prompt or os.getenv("SYSTEM_PROMPT", COMIC_TRANSLATION_PROMPT)
         self._client = None
 

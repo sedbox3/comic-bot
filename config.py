@@ -18,8 +18,8 @@ class Config:
 
     # LLM Provider
     llm_api_key: str = field(default_factory=lambda: os.getenv("LLM_API_KEY", ""))
-    llm_base_url: str = field(default_factory=lambda: os.getenv("LLM_BASE_URL", "https://openrouter.ai/api/v1"))
-    llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "google/gemini-2.0-flash-exp:free"))
+    llm_base_url: str = field(default_factory=lambda: os.getenv("LLM_BASE_URL", "https://api.orcarouter.ai/v1"))
+    llm_model: str = field(default_factory=lambda: os.getenv("LLM_MODEL", "z-ai/glm-5.3-flash-free"))
 
     # OCR
     ocr_backend: str = field(default_factory=lambda: os.getenv("OCR_BACKEND", "rapidocr"))
@@ -58,12 +58,12 @@ def load_config() -> Config:
 
 # Example .env content for reference
 ENV_EXAMPLE = """# ===== LLM Provider Configuration =====
-# Get free API key from: https://openrouter.ai/keys
-LLM_API_KEY=sk-or-v1-your-key-here
+# Get free API key from: https://orcarouter.ai
+LLM_API_KEY=sk-orca-your-key-here
 
-# OpenRouter (free models available)
-LLM_BASE_URL=https://openrouter.ai/api/v1
-LLM_MODEL=google/gemini-2.0-flash-exp:free
+# OrcaRouter (free models available)
+LLM_BASE_URL=https://api.orcarouter.ai/v1
+LLM_MODEL=z-ai/glm-5.3-flash-free
 
 # Alternative: Google Gemini (free tier)
 # LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/

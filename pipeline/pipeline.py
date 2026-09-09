@@ -542,7 +542,7 @@ Rules: Be dramatic, concise, use comic-style Arabic. JSON only, no markdown."""
 
         try:
             client = httpx.Client(
-                base_url=self.llm_base_url.rstrip("/") if self.llm_base_url else "https://openrouter.ai/api/v1",
+                base_url=self.llm_base_url.rstrip("/") if self.llm_base_url else "https://api.orcarouter.ai/v1",
                 headers={
                     "Authorization": f"Bearer {self.llm_api_key}",
                     "Content-Type": "application/json",
@@ -553,7 +553,7 @@ Rules: Be dramatic, concise, use comic-style Arabic. JSON only, no markdown."""
             response = client.post(
                 "/chat/completions",
                 json={
-                    "model": self.llm_model or "minimax/minimax-m3:free",
+                    "model": self.llm_model or "z-ai/glm-5.3-flash-free",
                     "messages": [
                         {"role": "system", "content": system_msg},
                         {"role": "user", "content": prompt},
