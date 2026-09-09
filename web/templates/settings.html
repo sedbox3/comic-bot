@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الإعدادات — سِدبوكس</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="logo">
+        <span class="logo-icon">📚</span>
+        <span class="logo-text">سِدبوكس</span>
+      </a>
+      <div class="nav-links">
+        <a href="/">الرئيسية</a>
+        <a href="/settings" class="active">الإعدادات</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+
+      <section class="hero">
+        <h1>ال<span class="gradient-text">إعدادات</span></h1>
+        <p>ควบคุม نموذج الترجمة والمزود</p>
+      </section>
+
+      <section class="settings-section">
+        <div class="settings-card">
+          <h2>🤖 نموذج الذكاء الاصطناعي</h2>
+
+          <div class="form-group">
+            <label for="apiKey">مفتاح API</label>
+            <input type="password" id="apiKey" value="{{ settings.llm_api_key }}" placeholder="sk-orca-...">
+            <span class="form-hint">مفتاح الوصول للنموذج</span>
+          </div>
+
+          <div class="form-group">
+            <label for="baseUrl">رابط المزود (Base URL)</label>
+            <input type="text" id="baseUrl" value="{{ settings.llm_base_url }}" placeholder="https://api.orcarouter.ai/v1">
+            <span class="form-hint">رابط واجهة API للمزود</span>
+          </div>
+
+          <div class="form-group">
+            <label for="model">النموذج (Model)</label>
+            <input type="text" id="model" value="{{ settings.llm_model }}" placeholder="z-ai/glm-5.3-flash-free">
+            <span class="form-hint">اسم النموذج المستخدم في الترجمة</span>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary btn-lg" onclick="saveSettings()">
+              💾 حفظ الإعدادات
+            </button>
+            <button class="btn btn-outline btn-lg" onclick="resetSettings()">
+              🔄 إعادة الضبط
+            </button>
+          </div>
+
+          <div class="save-message hidden" id="saveMessage">
+            ✅ تم الحفظ بنجاح!
+          </div>
+        </div>
+
+        <!-- Presets -->
+        <div class="settings-card">
+          <h2>⚡ نماذج جاهزة</h2>
+          <div class="presets-grid">
+            <button class="preset-btn" onclick="applyPreset('orcarouter', 'z-ai/glm-5.3-flash-free', 'https://api.orcarouter.ai/v1')">
+              <span class="preset-name">OrcaRouter GLM</span>
+              <span class="preset-desc">مجاني — z-ai/glm-5.3-flash-free</span>
+            </button>
+            <button class="preset-btn" onclick="applyPreset('openrouter', 'google/gemini-2.0-flash-exp:free', 'https://openrouter.ai/api/v1')">
+              <span class="preset-name">OpenRouter Gemini</span>
+              <span class="preset-desc">مجاني — gemini-2.0-flash-exp</span>
+            </button>
+            <button class="preset-btn" onclick="applyPreset('groq', 'llama-3.1-8b-instant', 'https://api.groq.com/openai/v1')">
+              <span class="preset-name">Groq Llama</span>
+              <span class="preset-desc">سريع — llama-3.1-8b-instant</span>
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    function applyPreset(provider, model, baseUrl) {
+      document.getElementById('model').value = model;
+      document.getElementById('baseUrl').value = baseUrl;
+    }
+
+    async function saveSettings() {
+      const data = {
+        llm_api_key: document.getElementById('apiKey').value,
+        llm_base_url: document.getElementById('baseUrl').value,
+        llm_model: document.getElementById('model').value,
+      };
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (res.ok) {
+          const msg = document.getElementById('saveMessage');
+          msg.classList.remove('hidden');
+          setTimeout(() => msg.classList.add('hidden'), 3000);
+        }
+      } catch (err) {
+        alert('حدث خطأ أثناء الحفظ');
+      }
+    }
+
+    function resetSettings() {
+      document.getElementById('apiKey').value = '';
+      document.getElementById('baseUrl').value = 'https://api.orcarouter.ai/v1';
+      document.getElementById('model').value = 'z-ai/glm-5.3-flash-free';
+    }
+  </script>
+
+</body>
+</html>

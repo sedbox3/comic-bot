@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>سِدبوكس — ترجمة كوميكس عربي</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="container nav-container">
+      <a href="/" class="logo">
+        <span class="logo-icon">📚</span>
+        <span class="logo-text">سِدبوكس</span>
+      </a>
+      <div class="nav-links">
+        <a href="/" class="active">الرئيسية</a>
+        <a href="/settings">الإعدادات</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+
+      <!-- Hero -->
+      <section class="hero">
+        <h1>ترجم كوميكسك <span class="gradient-text">إلى العربية</span></h1>
+        <p>ارفع ملف CBZ أو CBR أو صورة، وسيتم ترجمته تلقائياً بجودة احترافية</p>
+      </section>
+
+      <!-- Upload Area -->
+      <section class="upload-section">
+        <div class="upload-area" id="uploadArea">
+          <div class="upload-icon">📁</div>
+          <h3>اسحب الملف هنا</h3>
+          <p>أو اضغط لاختيار ملف</p>
+          <p class="upload-formats">يدعم: CBZ, CBR, JPG, PNG, GIF, BMP, WebP</p>
+          <input type="file" id="fileInput" accept=".cbz,.cbr,.jpg,.jpeg,.png,.gif,.bmp,.webp" hidden>
+        </div>
+
+        <!-- File Info -->
+        <div class="file-info hidden" id="fileInfo">
+          <div class="file-details">
+            <span class="file-icon">📄</span>
+            <span class="file-name" id="fileName"></span>
+            <span class="file-size" id="fileSize"></span>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="clearFile()">إزالة</button>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-section hidden" id="progressSection">
+          <div class="progress-header">
+            <span class="progress-phase" id="progressPhase">جاري الرفع...</span>
+            <span class="progress-percent" id="progressPercent">0%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-steps">
+            <div class="step" id="step1">
+              <span class="step-dot"></span>
+              <span>الرفع</span>
+            </div>
+            <div class="step" id="step2">
+              <span class="step-dot"></span>
+              <span>كشف النص</span>
+            </div>
+            <div class="step" id="step3">
+              <span class="step-dot"></span>
+              <span>إزالة النص</span>
+            </div>
+            <div class="step" id="step4">
+              <span class="step-dot"></span>
+              <span>الترجمة</span>
+            </div>
+            <div class="step" id="step5">
+              <span class="step-dot"></span>
+              <span>التصميم</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result -->
+        <div class="result-section hidden" id="resultSection">
+          <div class="result-icon">✅</div>
+          <h3>تم الترجمة بنجاح!</h3>
+          <p class="result-filename" id="resultFilename"></p>
+          <div class="result-actions">
+            <a class="btn btn-primary btn-lg" id="downloadBtn" href="#" download>
+              📥 تحميل الملف المترجم
+            </a>
+            <button class="btn btn-outline btn-lg" onclick="resetAll()">
+              🔄 ترجمة ملف آخر
+            </button>
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div class="error-section hidden" id="errorSection">
+          <div class="error-icon">❌</div>
+          <h3>حدث خطأ</h3>
+          <p class="error-message" id="errorMessage"></p>
+          <button class="btn btn-outline" onclick="resetAll()">حاول مرة أخرى</button>
+        </div>
+      </section>
+
+      <!-- Features -->
+      <section class="features">
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <h3>كشف ذكي</h3>
+            <p>يكتشف فقاعات الكلام بأي شكل أو حجم</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🎨</div>
+            <h3>إزالة النص</h3>
+            <p>يمح النص ويرسم الخلفية بدقة</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <h3>ترجمة ذكية</h3>
+            <p>ترجمة بواسطة نماذج ذكاء اصطناعي</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">✨</div>
+            <h3>تصميم احترافي</h3>
+            <p>خط عربي جميل داخل الفقاعة</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const progressSection = document.getElementById('progressSection');
+    const progressPhase = document.getElementById('progressPhase');
+    const progressPercent = document.getElementById('progressPercent');
+    const progressFill = document.getElementById('progressFill');
+    const resultSection = document.getElementById('resultSection');
+    const resultFilename = document.getElementById('resultFilename');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const errorSection = document.getElementById('errorSection');
+    const errorMessage = document.getElementById('errorMessage');
+
+    let currentJobId = null;
+
+    // Click to upload
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        handleFile(e.dataTransfer.files[0]);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    function formatSize(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function handleFile(file) {
+      // Show file info
+      fileName.textContent = file.name;
+      fileSize.textContent = formatSize(file.size);
+      uploadArea.classList.add('hidden');
+      fileInfo.classList.remove('hidden');
+
+      // Start upload
+      uploadFile(file);
+    }
+
+    function clearFile() {
+      fileInput.value = '';
+      uploadArea.classList.remove('hidden');
+      fileInfo.classList.add('hidden');
+      progressSection.classList.add('hidden');
+      resultSection.classList.add('hidden');
+      errorSection.classList.add('hidden');
+    }
+
+    function resetAll() {
+      clearFile();
+    }
+
+    function setStep(stepNum, status) {
+      const step = document.getElementById('step' + stepNum);
+      step.classList.remove('active', 'done');
+      if (status === 'active') step.classList.add('active');
+      if (status === 'done') step.classList.add('done');
+    }
+
+    async function uploadFile(file) {
+      // Show progress
+      fileInfo.classList.add('hidden');
+      progressSection.classList.remove('hidden');
+      errorSection.classList.add('hidden');
+
+      // Step 1: Upload
+      setStep(1, 'active');
+      progressPhase.textContent = 'جاري الرفع...';
+      progressPercent.textContent = '0%';
+      progressFill.style.width = '0%';
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const uploadData = await uploadRes.json();
+        if (uploadRes.ok) {
+          currentJobId = uploadData.job_id;
+          setStep(1, 'done');
+          progressFill.style.width = '20%';
+          progressPercent.textContent = '20%';
+
+          // Step 2-5: Process
+          await processFile();
+        } else {
+          throw new Error(uploadData.error || 'Upload failed');
+        }
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    async function processFile() {
+      const phases = [
+        { step: 2, text: 'جاري كشف النصوص...', percent: 40 },
+        { step: 3, text: 'جاري إزالة النص...', percent: 60 },
+        { step: 4, text: 'جاري الترجمة...', percent: 80 },
+        { step: 5, text: 'جاري التصميم...', percent: 95 },
+      ];
+
+      // Animate through phases
+      let phaseIndex = 0;
+      const phaseInterval = setInterval(() => {
+        if (phaseIndex < phases.length) {
+          const p = phases[phaseIndex];
+          setStep(p.step, 'active');
+          progressPhase.textContent = p.text;
+          progressFill.style.width = p.percent + '%';
+          progressPercent.textContent = p.percent + '%';
+          phaseIndex++;
+        }
+      }, 3000);
+
+      try {
+        const res = await fetch('/api/process/' + currentJobId, {
+          method: 'POST',
+        });
+
+        clearInterval(phaseInterval);
+
+        const data = await res.json();
+        if (res.ok) {
+          // Mark all steps done
+          for (let i = 2; i <= 5; i++) setStep(i, 'done');
+          progressFill.style.width = '100%';
+          progressPercent.textContent = '100%';
+          progressPhase.textContent = 'اكتمل!';
+
+          // Show result
+          setTimeout(() => {
+            progressSection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+            resultFilename.textContent = data.result_file;
+            downloadBtn.href = '/api/download/' + currentJobId + '/' + data.result_file;
+          }, 500);
+        } else {
+          throw new Error(data.error || 'Processing failed');
+        }
+      } catch (err) {
+        clearInterval(phaseInterval);
+        showError(err.message);
+      }
+    }
+
+    function showError(msg) {
+      progressSection.classList.add('hidden');
+      errorSection.classList.remove('hidden');
+      errorMessage.textContent = msg;
+    }
+  </script>
+
+</body>
+</html>
