@@ -167,9 +167,9 @@ class ComicPipeline:
                     self._detector = DetectorClass(device='cpu')
                     self._detector.load_model()
                     if hasattr(self._detector, 'set_param'):
-                        self._detector.set_param('detect_size', 1024)
-                        self._detector.set_param('mask dilate size', 5)
-                    logger.info("CTD detector loaded")
+                        self._detector.set_param('detect_size', 512)
+                        self._detector.set_param('mask dilate size', 3)
+                    logger.info("CTD detector loaded with detect_size=512")
                 except Exception as e:
                     logger.warning(f"Failed to load CTD detector: {e}")
                     self._detector = "rapidocr"
@@ -193,9 +193,9 @@ class ComicPipeline:
         orig_h, orig_w = image.shape[:2]
         logger.info(f"[{page_label}] Original image: {orig_w}x{orig_h}")
 
-        # Scale for detection - reduced from 2048 to 1024 to prevent OOM
+        # Scale for detection - aggressive downscale to prevent OOM with CTD
         scale = 1.0
-        max_dim = 1024
+        max_dim = 512
         if max(orig_h, orig_w) > max_dim:
             scale = max_dim / max(orig_h, orig_w)
             new_w = int(orig_w * scale)
@@ -224,12 +224,24 @@ class ComicPipeline:
             logger.info(f"[{page_label}] Using RapidOCR DBNet detection engine...")
             mask_scaled, blk_list = self._rapidocr_detect(image_scaled)
         else:
+            # Try CTD detector with fallback to RapidOCR on OOM
             try:
                 import torch
                 with torch.no_grad():
                     mask_scaled, blk_list = detector.detect(image_scaled)
-            except ImportError:
-                mask_scaled, blk_list = detector.detect(image_scaled)
+            except (ImportError, cv2.error, MemoryError, Exception) as e:
+                logger.warning(f"[{page_label}] CTD detector failed ({type(e).__name__}: {e}), falling back to RapidOCR")
+                # Clear any partially allocated memory
+                del detector
+                self._detector = "rapidocr"
+                gc.collect()
+                try:
+                    import torch
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                except ImportError:
+                    pass
+                mask_scaled, blk_list = self._rapidocr_detect(image_scaled)
 
         logger.info(f"[{page_label}] Total detected candidate boxes: {len(blk_list)}")
 
