@@ -524,7 +524,7 @@ class ComicPipeline:
         return white_ratio > 0.7
 
     def _translate(self, bubbles: List[BubbleGroup], page_label: str) -> List[BubbleGroup]:
-        """Step 3: Bulletproof LLM translation."""
+        """Step 3: Bulletproof LLM translation with professional comic localization prompt."""
         import httpx
 
         # Only translate bubbles with actual text
@@ -534,11 +534,42 @@ class ComicPipeline:
             return bubbles
 
         texts = [{"id": idx, "text": b.full_text} for idx, (i, b) in enumerate(to_translate)]
-        prompt = json.dumps(texts, ensure_ascii=False)
 
-        system_msg = self.system_prompt or """You are a comic translation specialist. Translate English comic text to Arabic.
-Return JSON array: [{"id": 0, "translation": "Arabic text"}]
-Rules: Be dramatic, concise, use comic-style Arabic. JSON only, no markdown."""
+        # Professional comic translation system prompt
+        system_msg = self.system_prompt or """You are an expert comic book and manga localization specialist specializing in translating dialogue into natural, dramatic, and fluent Arabic.
+
+### Core Objectives:
+1. Contextual Cohesion (الترابط وسياق الحوار):
+   - You will receive a list of text bubbles from a single comic page in their visual reading order.
+   - Dialogue often splits across multiple bubbles. Maintain complete grammatical continuity across split sentences rather than translating each bubble as an isolated fragment.
+   - Preserve conversational flow, pronoun consistency (gender, singular/plural), and character dynamics.
+
+2. Tone & Localization:
+   - Use Modern Standard Arabic (فصحى معاصرة رشيقة وقوية) tailored for graphic novels. Avoid dry, machine-like literal phrasing.
+   - Match the emotional tone (anger, sarcasm, whispering, heroism, urgency) to the context.
+   - For Western superhero comics: Make the dialogue punchy, decisive, and dynamic.
+   - For sound effects (SFX): Transcribe phonetically or use expressive equivalents (e.g., "بام!", "كراش!", "وووش!").
+
+3. Bubble Space Optimization:
+   - Arabic text often expands. Keep translations concise and tightly phrased so the text fits comfortably inside comic bubbles without text overflow.
+
+4. Output Format:
+   - You MUST reply with strict, valid JSON only.
+   - Do NOT wrap the JSON in markdown code blocks.
+   - Return an array of objects matching the input bubble IDs.
+
+### JSON Schema:
+[
+  {
+    "id": <bubble_id>,
+    "arabic_text": "<concise, localized Arabic translation>"
+  }
+]"""
+
+        # User prompt with context instruction
+        user_prompt = f"""Translate the following dialogue bubbles from this comic page. Ensure sentences split across consecutive bubbles connect seamlessly:
+
+{json.dumps(texts, ensure_ascii=False)}"""
 
         logger.info(f"[{page_label}] Translating {len(texts)} bubbles via {self.llm_model}")
 
@@ -558,7 +589,7 @@ Rules: Be dramatic, concise, use comic-style Arabic. JSON only, no markdown."""
                     "model": self.llm_model or "z-ai/glm-5.3-flash-free",
                     "messages": [
                         {"role": "system", "content": system_msg},
-                        {"role": "user", "content": prompt},
+                        {"role": "user", "content": user_prompt},
                     ],
                     "temperature": 0.3,
                 },
@@ -566,7 +597,7 @@ Rules: Be dramatic, concise, use comic-style Arabic. JSON only, no markdown."""
             response.raise_for_status()
 
             raw = response.json()["choices"][0]["message"]["content"]
-            logger.debug(f"[{page_label}] Raw LLM response: {raw[:200]}")
+            logger.debug(f"[{page_label}] Raw LLM response: {raw[:300]}")
 
             # Parse JSON
             translations = self._parse_translation_response(raw, len(texts))
@@ -599,13 +630,18 @@ Rules: Be dramatic, concise, use comic-style Arabic. JSON only, no markdown."""
 
             data = json.loads(cleaned)
             if isinstance(data, list):
-                return [item.get("translation", "") for item in data]
+                # Support both "arabic_text" (new) and "translation" (legacy) keys
+                return [item.get("arabic_text", item.get("translation", "")) for item in data]
         except json.JSONDecodeError:
             logger.warning("JSON parse failed, trying regex extraction")
 
-        # Regex fallback
-        pattern = r'"translation"\s*:\s*"([^"]*)"'
+        # Regex fallback - try "arabic_text" first, then "translation"
+        pattern = r'"arabic_text"\s*:\s*"([^"]*)"'
         matches = re.findall(pattern, raw)
+
+        if not matches:
+            pattern = r'"translation"\s*:\s*"([^"]*)"'
+            matches = re.findall(pattern, raw)
 
         if matches:
             return matches
