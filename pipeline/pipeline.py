@@ -193,9 +193,9 @@ class ComicPipeline:
         orig_h, orig_w = image.shape[:2]
         logger.info(f"[{page_label}] Original image: {orig_w}x{orig_h}")
 
-        # Scale for detection
+        # Scale for detection - reduced from 2048 to 1024 to prevent OOM
         scale = 1.0
-        max_dim = 2048
+        max_dim = 1024
         if max(orig_h, orig_w) > max_dim:
             scale = max_dim / max(orig_h, orig_w)
             new_w = int(orig_w * scale)
@@ -209,7 +209,15 @@ class ComicPipeline:
         logger.info(f"[{page_label}] Total detected candidate boxes: detecting...")
 
         detector = self._get_detector()
+
+        # Free memory before detection to prevent OOM
         gc.collect()
+        try:
+            import torch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except ImportError:
+            pass
 
         # Use RapidOCR DBNet detection if CTD not available
         if detector == "rapidocr":
