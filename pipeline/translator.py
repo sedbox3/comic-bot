@@ -8,39 +8,25 @@ from typing import List, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
-COMIC_TRANSLATION_PROMPT = """You are an expert comic book and manga localization specialist specializing in translating dialogue into natural, dramatic, and fluent Arabic.
+COMIC_TRANSLATION_PROMPT = """أنت مترجم ومُعرب محترف للقصص المصورة (Comics Localization Specialist).
+مهمتك: ترجمة نصوص وحوارات الكوميكس المرفقة إلى لغة عربية فصحى درامية، حيوية، وموجزة، تناسب أسلوب حوارات الكوميكس الحقيقية.
 
-### Core Objectives:
-1. Contextual Cohesion (الترابط وسياق الحوار):
-   - You will receive a list of text bubbles from a single comic page in their visual reading order.
-   - Dialogue often splits across multiple bubbles. Maintain complete grammatical continuity across split sentences rather than translating each bubble as an isolated fragment.
-   - Preserve conversational flow, pronoun consistency (gender, singular/plural), and character dynamics.
+القواعد الصارمة:
+1. تجنب الحرفية الركيكة تماماً؛ صِغ العبارات بأسلوب درامي متماسك يعكس نبرة المشهد (غضب، سخرية، توتر، همس).
+2. الإيجاز الذكي (Conciseness): فقاعات الحوار ضيقة جداً، فاختر أقصر تعبير بلاغي يؤدي المعنى كاملاً دون حشو أو إطالة.
+3. التكييف السياقي للألفاظ:
+   - عبارات مثل "You're dead!" لا تُترجم "أنت ميت"، بل "سأقضي عليك!" أو "انتهى أمرك!".
+   - عبارات مثل "Let's fight!" → "هيّا نقاتل!"
+   - SFX مثل "BAM" → "بام!" أو ما يناسب الصوت
+   - تعامل مع المصطلحات القتالية والأسماء الحركية بما هو سائد واحترافي في مجلات الكوميكس المصورة.
+4. حافظ على سلامة النحو وقواعد التركيب العربي مع استخدام الأفعال النشطة.
+5. الإخراج: أرجع النتائج كـ JSON array مطابق للمدخلات بحيث يحمل كل عنصر id و translation فقط.
 
-2. Tone & Localization:
-   - Use Modern Standard Arabic (فصحى معاصرة رشيقة وقوية) tailored for graphic novels. Avoid dry, machine-like literal phrasing.
-   - Match the emotional tone (anger, sarcasm, whispering, heroism, urgency) to the context.
-   - For Western superhero comics: Make the dialogue punchy, decisive, and dynamic.
-   - For sound effects (SFX): Transcribe phonetically or use expressive equivalents (e.g., "بام!", "كراش!", "وووش!").
-   - Examples:
-     * "You're dead!" → "سأقضي عليك!" or "انتهى أمرك!" (not "أنت ميت")
-     * "Let's fight!" → "هيّا نقاتل!"
-     * "BAM" → "بام!"
+INPUT FORMAT:
+[{"id": 1, "text": "English text"}, {"id": 2, "text": "More text"}]
 
-3. Bubble Space Optimization:
-   - Arabic text often expands. Keep translations concise and tightly phrased so the text fits comfortably inside comic bubbles without text overflow.
-
-4. Output Format:
-   - You MUST reply with strict, valid JSON only.
-   - Do NOT wrap the JSON in markdown code blocks.
-   - Return an array of objects matching the input bubble IDs.
-
-### JSON Schema:
-[
-  {
-    "id": <bubble_id>,
-    "arabic_text": "<concise, localized Arabic translation>"
-  }
-]"""
+OUTPUT FORMAT (JSON only, no markdown):
+[{"id": 1, "translation": "النص العربي"}, {"id": 2, "translation": "نص عربي آخر"}]"""
 
 
 class LLMTranslator:
@@ -144,12 +130,10 @@ class LLMTranslator:
                 for orig in original:
                     if orig["id"] in trans_map:
                         entry = trans_map[orig["id"]]
-                        # Support both "arabic_text" (new) and "translation" (legacy) keys
-                        translated = entry.get("arabic_text", entry.get("translation", orig["text"]))
                         result.append({
                             "id": orig["id"],
                             "text": orig["text"],
-                            "translation": translated,
+                            "translation": entry.get("translation", orig["text"]),
                         })
                     else:
                         result.append({
