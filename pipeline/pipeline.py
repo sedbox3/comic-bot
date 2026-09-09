@@ -311,6 +311,72 @@ class ComicPipeline:
 
         return grouped, mask
 
+    def _run_ocr(self, image: np.ndarray, blk_list, page_label: str) -> list:
+        """Run ComicOCR on each detected text block."""
+        ocr = self._get_ocr()
+        if ocr is None:
+            return blk_list
+
+        # Create debug directory
+        debug_dir = DEBUG_CROPS
+        debug_dir.mkdir(exist_ok=True)
+
+        for i, blk in enumerate(blk_list):
+            coords = getattr(blk, 'xyxy', None)
+            if not coords:
+                continue
+
+            if isinstance(coords, (list, tuple)):
+                x1, y1, x2, y2 = coords
+            else:
+                x1, y1, x2, y2 = coords[0], coords[1], coords[2], coords[3]
+
+            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+
+            # Clamp to image bounds
+            x1 = max(0, x1)
+            y1 = max(0, y1)
+            x2 = min(image.shape[1], x2)
+            y2 = min(image.shape[0], y2)
+
+            if x2 <= x1 or y2 <= y1:
+                continue
+
+            w, h = x2 - x1, y2 - y1
+
+            # Save debug crops (first 5)
+            if i < 5:
+                crop = image[y1:y2, x1:x2]
+                crop_path = debug_dir / f"crop_{i}_{x1}_{y1}.png"
+                cv2.imwrite(str(crop_path), crop)
+                logger.info(f"[{page_label}] Saved debug crop: {crop_path}")
+
+            # Run ComicOCR with preprocessing
+            text = ocr.ocr_bubble(image, x1, y1, w, h, block_id=i)
+
+            if hasattr(blk, 'text'):
+                blk.text = [text] if text else []
+            else:
+                blk._text = text
+
+        return blk_list
+
+    def _group_bubbles(self, bubbles: List[BubbleGroup]) -> List[BubbleGroup]:
+        """
+        Merge ONLY text lines that are clearly inside the same bubble.
+        Do NOT merge separate chained bubbles - keep them independent.
+        """
+        if not bubbles:
+            return []
+
+        # Sort by Y then X for natural reading order
+        bubbles.sort(key=lambda b: (b.y, b.x))
+
+        # DISABLE aggressive merging - return bubbles as-is
+        # Each detected text block is its own independent bubble
+        logger.info(f"Bubbles kept separate: {len(bubbles)} (no merging)")
+        return bubbles
+
     def _rapidocr_detect(self, image: np.ndarray):
         """Use RapidOCR's built-in DBNet text detection with downscaling for cloud performance."""
         import cv2
@@ -416,72 +482,6 @@ class ComicPipeline:
         except Exception as e:
             logger.error(f"[RapidOCR] Detection failed: {e}")
             return np.zeros(image.shape[:2], dtype=np.uint8), []
-
-    def _run_ocr(self, image: np.ndarray, blk_list, page_label: str) -> list:
-        """Run ComicOCR on each detected text block."""
-        ocr = self._get_ocr()
-        if ocr is None:
-            return blk_list
-
-        # Create debug directory
-        debug_dir = DEBUG_CROPS
-        debug_dir.mkdir(exist_ok=True)
-
-        for i, blk in enumerate(blk_list):
-            coords = getattr(blk, 'xyxy', None)
-            if not coords:
-                continue
-
-            if isinstance(coords, (list, tuple)):
-                x1, y1, x2, y2 = coords
-            else:
-                x1, y1, x2, y2 = coords[0], coords[1], coords[2], coords[3]
-
-            x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-
-            # Clamp to image bounds
-            x1 = max(0, x1)
-            y1 = max(0, y1)
-            x2 = min(image.shape[1], x2)
-            y2 = min(image.shape[0], y2)
-
-            if x2 <= x1 or y2 <= y1:
-                continue
-
-            w, h = x2 - x1, y2 - y1
-
-            # Save debug crops (first 5)
-            if i < 5:
-                crop = image[y1:y2, x1:x2]
-                crop_path = debug_dir / f"crop_{i}_{x1}_{y1}.png"
-                cv2.imwrite(str(crop_path), crop)
-                logger.info(f"[{page_label}] Saved debug crop: {crop_path}")
-
-            # Run ComicOCR with preprocessing
-            text = ocr.ocr_bubble(image, x1, y1, w, h, block_id=i)
-
-            if hasattr(blk, 'text'):
-                blk.text = [text] if text else []
-            else:
-                blk._text = text
-
-        return blk_list
-
-    def _group_bubbles(self, bubbles: List[BubbleGroup]) -> List[BubbleGroup]:
-        """
-        Merge ONLY text lines that are clearly inside the same bubble.
-        Do NOT merge separate chained bubbles - keep them independent.
-        """
-        if not bubbles:
-            return []
-
-        # Sort by Y then X for natural reading order
-        bubbles.sort(key=lambda b: (b.y, b.x))
-
-        # DISABLE aggressive merging - return bubbles as-is
-        # Each detected text block is its own independent bubble
-        logger.info(f"Bubbles kept separate: {len(bubbles)} (no merging)")
-        return bubbles
 
     def _smart_inpaint(self, image: np.ndarray, mask: np.ndarray, bubbles: List[BubbleGroup], page_label: str) -> np.ndarray:
         """Step 2: Ultra-high precision inpainting with adaptive dilation and background sampling."""
