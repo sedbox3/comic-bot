@@ -32,6 +32,64 @@ logger = logging.getLogger(__name__)
 DEBUG_CROPS = Path(tempfile.gettempdir()) / "comic_translator" / "debug_crops"
 
 
+class DetectionError(Exception):
+    """Raised when all text detection methods fail."""
+    pass
+
+
+# Global cached RapidOCR instance to avoid reloading models on every request
+_rapidocr_instance = None
+_rapidocr_load_error = None
+
+
+def _get_rapidocr():
+    """Get or create a cached RapidOCR instance with optimized ONNX settings."""
+    global _rapidocr_instance, _rapidocr_load_error
+
+    if _rapidocr_instance is not None:
+        return _rapidocr_instance
+
+    if _rapidocr_load_error is not None:
+        raise _rapidocr_load_error
+
+    try:
+        import onnxruntime as ort
+
+        # Create optimized session options for CPU
+        sess_options = ort.SessionOptions()
+        sess_options.intra_op_num_threads = 1
+        sess_options.inter_op_num_threads = 1
+        sess_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+        sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_BASIC
+        sess_options.log_severity_level = 3  # Suppress ONNX logs
+
+        from rapidocr_onnxruntime import RapidOCR
+
+        _rapidocr_instance = RapidOCR(
+            det_limit_side_len=768,
+            det_limit_type='max',
+            det_db_thresh=0.2,
+            det_db_box_thresh=0.3,
+            det_db_unclip_ratio=1.6,
+            det_use_cuda=False,
+        )
+
+        # Override the session options if available
+        if hasattr(_rapidocr_instance, 'text_detuctor') and hasattr(_rapidocr_instance.text_detuctor, 'session'):
+            _rapidocr_instance.text_detuctor.session = ort.InferenceSession(
+                _rapidocr_instance.text_detuctor.model_path,
+                sess_options=sess_options,
+                providers=['CPUExecutionProvider']
+            )
+
+        logger.info("RapidOCR loaded successfully (cached, single-threaded CPU)")
+        return _rapidocr_instance
+
+    except Exception as e:
+        _rapidocr_load_error = DetectionError(f"Failed to load RapidOCR: {type(e).__name__}: {e}")
+        raise _rapidocr_load_error
+
+
 def extract_text_style(crop_bgr: np.ndarray, text_mask: np.ndarray) -> Tuple[Tuple[int, int, int], bool]:
     """
     Analyze the original un-inpainted text crop to determine:
@@ -172,12 +230,12 @@ class ComicPipeline:
                     logger.info("CTD detector loaded with detect_size=768")
                 except Exception as e:
                     logger.warning(f"Failed to load CTD detector: {e}")
-                    self._detector = "rapidocr"
+                    self._detector = None  # Will try RapidOCR in _detect_and_group
                 finally:
                     os.chdir(old_cwd)
             else:
-                logger.info("BallonsTranslator not found, using RapidOCR DBNet detection")
-                self._detector = "rapidocr"
+                logger.info("BallonsTranslator not found, will use RapidOCR")
+                self._detector = None
         return self._detector
 
     def _get_ocr(self):
@@ -189,7 +247,11 @@ class ComicPipeline:
         return self._ocr_engine
 
     def _detect_and_group(self, image: np.ndarray, page_label: str) -> Tuple[List[BubbleGroup], np.ndarray]:
-        """Step 1: Detect text and group into bubbles."""
+        """Step 1: Detect text and group into bubbles.
+        
+        Raises:
+            DetectionError: If all detection methods fail due to memory or runtime errors.
+        """
         orig_h, orig_w = image.shape[:2]
         logger.info(f"[{page_label}] Original image: {orig_w}x{orig_h}")
 
@@ -206,7 +268,7 @@ class ComicPipeline:
             new_w, new_h = orig_w, orig_h
             image_scaled = image
 
-        logger.info(f"[{page_label}] Total detected candidate boxes: detecting...")
+        logger.info(f"[{page_label}] Detecting text regions...")
 
         detector = self._get_detector()
 
@@ -219,21 +281,20 @@ class ComicPipeline:
         except ImportError:
             pass
 
-        # Use RapidOCR DBNet detection if CTD not available
-        if detector == "rapidocr":
-            logger.info(f"[{page_label}] Using RapidOCR DBNet detection engine...")
-            mask_scaled, blk_list = self._rapidocr_detect(image_scaled)
-        else:
-            # Try CTD detector with fallback to RapidOCR on OOM
+        detection_error = None
+
+        # Try CTD detector first if available
+        if detector is not None:
             try:
                 import torch
                 with torch.no_grad():
                     mask_scaled, blk_list = detector.detect(image_scaled)
+                logger.info(f"[{page_label}] CTD detection successful: {len(blk_list)} boxes")
             except (ImportError, cv2.error, MemoryError, Exception) as e:
-                logger.warning(f"[{page_label}] CTD detector failed ({type(e).__name__}: {e}), falling back to RapidOCR")
+                logger.warning(f"[{page_label}] CTD detector failed ({type(e).__name__}: {e})")
+                detection_error = e
                 # Clear any partially allocated memory
-                del detector
-                self._detector = "rapidocr"
+                self._detector = None
                 gc.collect()
                 try:
                     import torch
@@ -241,7 +302,29 @@ class ComicPipeline:
                         torch.cuda.empty_cache()
                 except ImportError:
                     pass
+                mask_scaled, blk_list = None, []
+
+        # Fallback to RapidOCR if CTD failed or wasn't available
+        if detector is None or mask_scaled is None:
+            try:
+                logger.info(f"[{page_label}] Using RapidOCR DBNet detection engine...")
                 mask_scaled, blk_list = self._rapidocr_detect(image_scaled)
+                logger.info(f"[{page_label}] RapidOCR detection successful: {len(blk_list)} boxes")
+            except DetectionError as e:
+                logger.error(f"[{page_label}] RapidOCR also failed: {e}")
+                raise DetectionError(
+                    f"All text detection methods failed. "
+                    f"CTD error: {detection_error}. "
+                    f"RapidOCR error: {e}. "
+                    f"System may not have enough memory to run detection models."
+                ) from e
+            except Exception as e:
+                logger.error(f"[{page_label}] RapidOCR unexpected error: {type(e).__name__}: {e}")
+                raise DetectionError(
+                    f"All text detection methods failed. "
+                    f"CTD error: {detection_error}. "
+                    f"RapidOCR error: {type(e).__name__}: {e}"
+                ) from e
 
         logger.info(f"[{page_label}] Total detected candidate boxes: {len(blk_list)}")
 
@@ -402,110 +485,101 @@ class ComicPipeline:
         return bubbles
 
     def _rapidocr_detect(self, image: np.ndarray):
-        """Use RapidOCR's built-in DBNet text detection with downscaling for cloud performance."""
+        """Use RapidOCR's built-in DBNet text detection with cached instance.
+        
+        Raises:
+            DetectionError: If RapidOCR model cannot be loaded or fails.
+        """
         import cv2
         import numpy as np
         import time
         
-        try:
-            from rapidocr_onnxruntime import RapidOCR
-            
-            # Configure RapidOCR for lightweight detection
-            ocr = RapidOCR(
-                det_limit_side_len=1024,    # Ultra-light for cloud containers
-                det_limit_type='max',
-                det_db_thresh=0.2,          # Low threshold to capture stylized comic fonts
-                det_db_box_thresh=0.3,      # Retain smaller shouts and whispers
-                det_db_unclip_ratio=1.6     # Expand box contour to cover full dialogue words
-            )
-            
-            orig_h, orig_w = image.shape[:2]
-            max_det_side = 1024
-            
-            # Downscale for detection to save memory
-            if max(orig_h, orig_w) > max_det_side:
-                scale = max_det_side / max(orig_h, orig_w)
-                det_w = int(orig_w * scale)
-                det_h = int(orig_h * scale)
-                det_image = cv2.resize(image, (det_w, det_h), interpolation=cv2.INTER_AREA)
-                logger.info(f"[RapidOCR] Downscaled to {det_w}x{det_h} for ultra-light detection (scale={scale:.4f})")
-            else:
-                scale = 1.0
-                det_image = image
-                logger.info(f"[RapidOCR] Running DBNet on {orig_w}x{orig_h}...")
-            
-            t0 = time.time()
-            result, _ = ocr(det_image)
-            elapsed = time.time() - t0
-            logger.info(f"[RapidOCR] Detection finished in {elapsed:.2f}s")
-            
-            if not result:
-                logger.warning("[RapidOCR] No text detected on page.")
-                return np.zeros(image.shape[:2], dtype=np.uint8), []
-            
-            mask = np.zeros((orig_h, orig_w), dtype=np.uint8)
-            blk_list = []
-            
-            class Block:
-                def __init__(self, x1, y1, x2, y2, text=""):
-                    self.xyxy = [x1, y1, x2, y2]
-                    self._text = text
-                def get_text(self):
-                    return self._text
-            
-            inv_scale = 1.0 / scale if scale != 1.0 else 1.0
-            
-            for item in result:
-                pts = np.array(item[0], dtype=np.int32)
-                text = item[1].strip()
-                score = float(item[2])
-                
-                # Get bounding box on downscaled image
-                x, y, bw, bh = cv2.boundingRect(pts)
-                
-                # Discard tiny artifacts (<12px) and empty strings
-                if bw < 12 or bh < 12 or len(text) == 0:
-                    continue
-                
-                # Add 6% padding to ensure letters aren't clipped
-                pad_x = int(bw * 0.06)
-                pad_y = int(bh * 0.06)
-                bx = max(0, x - pad_x)
-                by = max(0, y - pad_y)
-                bw_pad = bw + (2 * pad_x)
-                bh_pad = bh + (2 * pad_y)
-                
-                # Scale coordinates back to original full-res image
-                real_x = int(bx * inv_scale)
-                real_y = int(by * inv_scale)
-                real_w = int(bw_pad * inv_scale)
-                real_h = int(bh_pad * inv_scale)
-                
-                # Ensure boxes stay within original canvas bounds
-                real_x = max(0, min(orig_w - 1, real_x))
-                real_y = max(0, min(orig_h - 1, real_y))
-                real_w = min(orig_w - real_x, real_w)
-                real_h = min(orig_h - real_y, real_h)
-                
-                if real_w < 12 or real_h < 12:
-                    continue
-                
-                blk = Block(real_x, real_y, real_x + real_w, real_y + real_h, text)
-                blk_list.append(blk)
-                
-                # Fill mask at original resolution
-                mask[real_y:real_y+real_h, real_x:real_x+real_w] = 255
-            
-            # Dilate mask slightly
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-            mask = cv2.dilate(mask, kernel, iterations=1)
-            
-            logger.info(f"[RapidOCR] Successfully found {len(blk_list)} dialogue regions.")
-            return mask, blk_list
-            
-        except Exception as e:
-            logger.error(f"[RapidOCR] Detection failed: {e}")
+        # Get cached RapidOCR instance (raises DetectionError on failure)
+        ocr = _get_rapidocr()
+        
+        orig_h, orig_w = image.shape[:2]
+        max_det_side = 768
+        
+        # Downscale for detection to save memory
+        if max(orig_h, orig_w) > max_det_side:
+            scale = max_det_side / max(orig_h, orig_w)
+            det_w = int(orig_w * scale)
+            det_h = int(orig_h * scale)
+            det_image = cv2.resize(image, (det_w, det_h), interpolation=cv2.INTER_AREA)
+            logger.info(f"[RapidOCR] Downscaled to {det_w}x{det_h} for detection (scale={scale:.4f})")
+        else:
+            scale = 1.0
+            det_image = image
+            logger.info(f"[RapidOCR] Running DBNet on {orig_w}x{orig_h}...")
+        
+        t0 = time.time()
+        result, _ = ocr(det_image)
+        elapsed = time.time() - t0
+        logger.info(f"[RapidOCR] Detection finished in {elapsed:.2f}s")
+        
+        if not result:
+            logger.warning("[RapidOCR] No text detected on page.")
             return np.zeros(image.shape[:2], dtype=np.uint8), []
+        
+        mask = np.zeros((orig_h, orig_w), dtype=np.uint8)
+        blk_list = []
+        
+        class Block:
+            def __init__(self, x1, y1, x2, y2, text=""):
+                self.xyxy = [x1, y1, x2, y2]
+                self._text = text
+            def get_text(self):
+                return self._text
+        
+        inv_scale = 1.0 / scale if scale != 1.0 else 1.0
+        
+        for item in result:
+            pts = np.array(item[0], dtype=np.int32)
+            text = item[1].strip()
+            score = float(item[2])
+            
+            # Get bounding box on downscaled image
+            x, y, bw, bh = cv2.boundingRect(pts)
+            
+            # Discard tiny artifacts (<12px) and empty strings
+            if bw < 12 or bh < 12 or len(text) == 0:
+                continue
+            
+            # Add 6% padding to ensure letters aren't clipped
+            pad_x = int(bw * 0.06)
+            pad_y = int(bh * 0.06)
+            bx = max(0, x - pad_x)
+            by = max(0, y - pad_y)
+            bw_pad = bw + (2 * pad_x)
+            bh_pad = bh + (2 * pad_y)
+            
+            # Scale coordinates back to original full-res image
+            real_x = int(bx * inv_scale)
+            real_y = int(by * inv_scale)
+            real_w = int(bw_pad * inv_scale)
+            real_h = int(bh_pad * inv_scale)
+            
+            # Ensure boxes stay within original canvas bounds
+            real_x = max(0, min(orig_w - 1, real_x))
+            real_y = max(0, min(orig_h - 1, real_y))
+            real_w = min(orig_w - real_x, real_w)
+            real_h = min(orig_h - real_y, real_h)
+            
+            if real_w < 12 or real_h < 12:
+                continue
+            
+            blk = Block(real_x, real_y, real_x + real_w, real_y + real_h, text)
+            blk_list.append(blk)
+            
+            # Fill mask at original resolution
+            mask[real_y:real_y+real_h, real_x:real_x+real_w] = 255
+        
+        # Dilate mask slightly
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        mask = cv2.dilate(mask, kernel, iterations=1)
+        
+        logger.info(f"[RapidOCR] Successfully found {len(blk_list)} dialogue regions.")
+        return mask, blk_list
 
     def _smart_inpaint(self, image: np.ndarray, mask: np.ndarray, bubbles: List[BubbleGroup], page_label: str) -> np.ndarray:
         """Step 2: Ultra-high precision inpainting with adaptive dilation and background sampling."""
@@ -680,11 +754,11 @@ Rules: Be dramatic, concise, use comic-style Arabic. JSON only, no markdown."""
     def _process_single_page(self, image: np.ndarray, page_label: str) -> np.ndarray:
         logger.info(f"[{page_label}] Image: {image.shape[1]}x{image.shape[0]}")
 
-        # Step 1: Detect and group
+        # Step 1: Detect and group (may raise DetectionError)
         bubbles, mask = self._detect_and_group(image, page_label)
 
         if not bubbles:
-            logger.info(f"[{page_label}] No bubbles detected, returning original")
+            logger.info(f"[{page_label}] No text bubbles found in image")
             return image.copy()
 
         # Log bubble details for debugging

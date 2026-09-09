@@ -15,7 +15,7 @@ from flask import Flask, render_template, request, jsonify, send_file, session
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config import load_config
-from pipeline.pipeline import ComicPipeline
+from pipeline.pipeline import ComicPipeline, DetectionError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -157,6 +157,13 @@ def process_file(job_id):
                     "result_file": Path(result).name,
                 }
             logger.info(f"Job {job_id} completed successfully")
+
+        except DetectionError as e:
+            # Specific error for memory/detection failures
+            error_msg = f"Text detection failed: {e}"
+            logger.error(f"Detection failed for {job_id}: {e}")
+            with job_lock:
+                active_jobs[job_id] = {"status": "error", "error": error_msg}
 
         except Exception as e:
             logger.error(f"Processing failed for {job_id}: {e}", exc_info=True)
