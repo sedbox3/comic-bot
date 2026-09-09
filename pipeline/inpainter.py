@@ -1,6 +1,7 @@
 """Inpainting engine with adaptive dilation and context-aware background sampling."""
 
 import os
+import gc
 import cv2
 import numpy as np
 import logging
@@ -60,6 +61,10 @@ class SmartInpainter:
                 
                 sess_options = ort.SessionOptions()
                 sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+                sess_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+                sess_options.enable_cpu_mem_arena = False  # Disable to prevent OOM
+                sess_options.intra_op_num_threads = 1
+                sess_options.inter_op_num_threads = 1
                 
                 self.session = ort.InferenceSession(
                     self.model_path,
@@ -68,7 +73,7 @@ class SmartInpainter:
                 )
                 self.input_names = [inp.name for inp in self.session.get_inputs()]
                 self.output_names = [out.name for out in self.session.get_outputs()]
-                logger.info(f"LaMa ONNX loaded: {self.model_path}")
+                logger.info(f"LaMa ONNX loaded: {self.model_path} (mem_arena=False, sequential)")
             else:
                 logger.warning("LaMa ONNX not found, using OpenCV fallback only")
         except ImportError:
@@ -147,11 +152,17 @@ class SmartInpainter:
         # 1. Aspect-ratio preserving scale to fit inside 512x512
         target_size = 512
         scale = min(target_size / orig_h, target_size / orig_w)
-        new_w = int(orig_w * scale)
-        new_h = int(orig_h * scale)
-
-        resized_img = cv2.resize(crop_bgr, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
-        resized_mask = cv2.resize(crop_mask, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+        
+        # Only resize if actually larger than target
+        if scale < 1.0:
+            new_w = int(orig_w * scale)
+            new_h = int(orig_h * scale)
+            resized_img = cv2.resize(crop_bgr, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+            resized_mask = cv2.resize(crop_mask, (new_w, new_h), interpolation=cv2.INTER_NEAREST)
+        else:
+            new_w, new_h = orig_w, orig_h
+            resized_img = crop_bgr.copy()
+            resized_mask = crop_mask.copy()
 
         # 2. Pad to exactly 512x512 (Letterboxing with edge reflection)
         pad_top = (target_size - new_h) // 2
@@ -178,12 +189,20 @@ class SmartInpainter:
             else:
                 inputs[inp_name] = img_tensor
 
+        # Free memory before inference
+        del resized_img, resized_mask, padded_img, padded_mask
+        gc.collect()
+
         # 4. Run Inference
         try:
             preds = self.session.run(self.output_names, inputs)[0]
         except Exception as e:
             logger.warning(f"LaMa inference failed: {e}. Falling back to fast OpenCV Telea.")
             return cv2.inpaint(crop_bgr, crop_mask, 3, cv2.INPAINT_TELEA)
+        finally:
+            # Always free tensors after inference
+            del inputs, img_tensor, mask_tensor
+            gc.collect()
 
         # 5. Extract output and unpad back to original crop resolution
         out_img = preds[0]
@@ -203,6 +222,10 @@ class SmartInpainter:
         mask_3ch = cv2.cvtColor(crop_mask, cv2.COLOR_GRAY2BGR) / 255.0
         final_crop = (restored * mask_3ch + crop_bgr * (1.0 - mask_3ch)).astype(np.uint8)
         
+        # Free memory
+        del out_img, unpadded, restored, mask_3ch
+        gc.collect()
+        
         return final_crop
 
 
@@ -218,13 +241,19 @@ class LaMaInpainter:
         try:
             import onnxruntime as ort
             if os.path.exists(self.model_path) and os.path.getsize(self.model_path) > 1000:
+                sess_options = ort.SessionOptions()
+                sess_options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+                sess_options.enable_cpu_mem_arena = False
+                sess_options.intra_op_num_threads = 1
+                
                 self.session = ort.InferenceSession(
                     self.model_path,
+                    sess_options=sess_options,
                     providers=["CPUExecutionProvider"],
                 )
                 self.input_name = self.session.get_inputs()[0].name
                 self.mask_name = self.session.get_inputs()[1].name
-                logger.info(f"LaMa ONNX loaded: {self.model_path}")
+                logger.info(f"LaMa ONNX loaded (legacy): {self.model_path}")
             else:
                 logger.warning("LaMa ONNX not found or too small, using fallback")
         except ImportError:
@@ -334,11 +363,18 @@ class LaMaInpainter:
         mask_float = mask.astype(np.float32) / 255.0
         mask_float = np.expand_dims(np.expand_dims(mask_float, 0), 0)
 
+        # Free memory before inference
+        gc.collect()
+
         # Run inference
-        result = self.session.run(
-            None,
-            {self.input_name: img_float, self.mask_name: mask_float},
-        )[0]
+        try:
+            result = self.session.run(
+                None,
+                {self.input_name: img_float, self.mask_name: mask_float},
+            )[0]
+        finally:
+            del img_float, mask_float
+            gc.collect()
 
         # Post-process
         result = np.transpose(result[0], (1, 2, 0))  # CHW -> HWC
