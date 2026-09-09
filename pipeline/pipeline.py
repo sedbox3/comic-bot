@@ -167,9 +167,9 @@ class ComicPipeline:
                     self._detector = DetectorClass(device='cpu')
                     self._detector.load_model()
                     if hasattr(self._detector, 'set_param'):
-                        self._detector.set_param('detect_size', 512)
-                        self._detector.set_param('mask dilate size', 3)
-                    logger.info("CTD detector loaded with detect_size=512")
+                        self._detector.set_param('detect_size', 768)
+                        self._detector.set_param('mask dilate size', 4)
+                    logger.info("CTD detector loaded with detect_size=768")
                 except Exception as e:
                     logger.warning(f"Failed to load CTD detector: {e}")
                     self._detector = "rapidocr"
@@ -193,9 +193,9 @@ class ComicPipeline:
         orig_h, orig_w = image.shape[:2]
         logger.info(f"[{page_label}] Original image: {orig_w}x{orig_h}")
 
-        # Scale for detection - aggressive downscale to prevent OOM with CTD
+        # Scale for detection - balance between accuracy and memory
         scale = 1.0
-        max_dim = 512
+        max_dim = 768
         if max(orig_h, orig_w) > max_dim:
             scale = max_dim / max(orig_h, orig_w)
             new_w = int(orig_w * scale)
@@ -264,6 +264,8 @@ class ComicPipeline:
                         int(round(coords[3] / scale)),  # y2
                     ]
                     logger.debug(f"[{page_label}] Scaled box: {coords} -> {blk.xyxy}")
+
+        logger.info(f"[{page_label}] After scaling: {len(blk_list)} boxes")
 
         # Now run ComicOCR on the ORIGINAL image
         logger.info(f"[{page_label}] Running ComicOCR on original image...")
@@ -685,11 +687,19 @@ Rules: Be dramatic, concise, use comic-style Arabic. JSON only, no markdown."""
             logger.info(f"[{page_label}] No bubbles detected, returning original")
             return image.copy()
 
+        # Log bubble details for debugging
+        for i, b in enumerate(bubbles):
+            logger.info(f"[{page_label}] Bubble {i}: text='{b.full_text[:50]}' at ({b.x},{b.y}) {b.w}x{b.h}")
+
         # Step 2: Smart inpaint
         cleaned = self._smart_inpaint(image, mask, bubbles, page_label)
 
         # Step 3: Translate
         bubbles = self._translate(bubbles, page_label)
+
+        # Log translation results
+        for i, b in enumerate(bubbles):
+            logger.info(f"[{page_label}] Translated {i}: '{b.full_text[:30]}' -> '{b.translation[:30]}'")
 
         # Step 4: Render
         result = self._render(cleaned, bubbles, page_label)
